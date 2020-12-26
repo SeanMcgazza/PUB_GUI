@@ -1,0 +1,104 @@
+-------------GUI--------------------
+setup write and read methods for writing and reading to from Labels and text files
+Crete an action with the push button
+
+------------SQL-------------------------------
+Setup data base to crete a database
+Read from the data base
+write to the data base
+insert information into the GUI from database
+be able to get information back from the database from the GUI
+
+In database table: Drinks, food, table, price
+
+For customer que have it read into another database and 'Order by' assending
+and delete  the index everytime that order is completed.Then update table.
+
+What table is in database?
+Types of Drinks, Types of food 
+Price & amount ordered
+
+-----------Serever-----------------------------
+Setup serever to recive commands from clients
+Have server update database
+Then take information out of database
+Is there a way to check if database has been updated?
+(There might not be but a way around it)
+Habe the server flag the table its updating to update the GUI
+Have database update GUI
+
+Server accepts clients
+Depending on what is recived does some function
+Types of function
+wait for clients input
+Dinks
+Food
+
+Server sends back what the total is
+Function to send back total
+
+
+
+
+**************************************************************************************
+Was able to get both GUI and server working together using threads. Need to find a way
+to get the information from the user and put in onto the GUI. Or just know when the client
+has done or sent somthing.
+
+try:
+write a fuction that prints users input (The Conn function seems to be the problem
+cant pass conn from Main)
+
+have a function that get the input from the user and sends it to a fuction that returns taht
+input
+
+Send a value from one script/class to another
+
+Save a flag from a file and read it back in
+
+Problem with adding to database. Try making a new file rather than customers
+Line 47     c.execute("INSERT INTO Drink VALUES (?)'",first,) in DB_App
+
+
+using timers to generate gui. Seems to work no update DB from client side and try and update GUI using timer.
+
+
+************************************************************************************************************
+Have it when button is pressed saves order to a list called 'order'.
+Have the client send on that list through a for loop to the database Drink.
+delete databse everytime order is ordered
+server GUI should print up list of new order.
+
+****************NOTE*****************************
+You need to wait for server to get the message and process it before sending a new message
+The code:
+            while client.recv(2048).decode(FORMAT) != "MSG received":
+                print("Waiting for reply")
+                pass
+************************************************************************************************
+write code for que function
+get started on Kotlin and andriod app
+
+************************************************************************************************
+Put clear button in App
+	Clear button should clear the whole order will probaly be easier to code
+	maybe then you can add to delete last order
+
+Add a new option to pick table in app and have the server populate the table they selected.
+
+Have a return message from the server to say that its got the order and for the customer to confirm there order
+	The server should send back what the server recived and should only display on the barside when confirmed
+
+Try to fix the que function so that the the most recent order is taken care of.
+	Maybe needs some function to clear orders once complete.(possibly from app confirmation or order)
+
+******************************************************************************************************
+The remove and clear function on the app breaks the app. Try catch might be needed to fix or some if else
+	
+
+
+
+
+
+
+***Version Control**
