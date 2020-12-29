@@ -5,7 +5,7 @@ import threading
 
 #  The code bellow gets ip address SERVER = "192.168.43.115"
 # Get the ip of any network its on using port 5050
-HEADER = 64
+HEADER = 84
 PORT = 5050
 SERVER = socket.gethostbyname(socket.gethostname())
 ADDR = (SERVER, PORT)
@@ -100,32 +100,49 @@ def update_table_2(conn, addr):
             print(f"The message length {msg_length}")
             msg_length = int(msg_length)
             msg = conn.recv(msg_length).decode(FORMAT)
+            print("This is the message recived :" + msg)
             if "Clear" in msg:
                 clear_table2_db()
+
             if "Heineken" in msg:
                 print("In if statement " + msg)
                 table_2_order(conn, addr, msg)
+                msg = ""
+
             if "Guinness" in msg:
                 print("In if statement " + msg)
                 table_2_order(conn, addr, msg)
+                msg = ""
+
             if "Burger" in msg:
-                print("In if statement " + msg)
+                print("In Burger if statement " + msg)
                 table_2_order(conn, addr, msg)
+                msg = ""
+
             if "Chips" in msg:
                 print("In if statement " + msg)
                 table_2_order(conn, addr, msg)
+                msg = ""
+
             if "Kebab" in msg:
                 print("In if statement " + msg)
                 table_2_order(conn, addr, msg)
+                msg = ""
+
             if "Pizza" in msg:
                 print("In if statement " + msg)
                 table_2_order(conn, addr, msg)
+                msg = ""
+
             if "Carlsberg" in msg:
                 print("In if statement " + msg)
                 table_2_order(conn, addr, msg)
+                msg = ""
+
             if "Rock_Shore" in msg:
                 print("In if statement " + msg)
                 table_2_order(conn, addr, msg)
+                msg = ""
 
 # Order from table 1 has come in now read all of the order
 def update_table_1(conn, addr):
@@ -142,27 +159,42 @@ def update_table_1(conn, addr):
             if "Heineken" in msg:
                 print("In if statement " + msg)
                 update_drinkDB(conn, addr, msg)
+                msg = ""
+
             if "Guinness" in msg:
                 print("In if statement " + msg)
                 update_drinkDB(conn, addr, msg)
+                msg = ""
+
             if "Burger" in msg:
-                print("In if statement " + msg)
+                print("In Burger if statement " + msg)
                 update_drinkDB(conn, addr, msg)
+                msg = ""
+
             if "Chips" in msg:
                 print("In if statement " + msg)
                 update_drinkDB(conn, addr, msg)
+                msg = ""
+
             if "Kebab" in msg:
                 print("In if statement " + msg)
                 update_drinkDB(conn, addr, msg)
+                msg = ""
+
             if "Pizza" in msg:
                 print("In if statement " + msg)
                 update_drinkDB(conn, addr, msg)
+                msg = ""
+
             if "Carlsberg" in msg:
                 print("In if statement " + msg)
                 update_drinkDB(conn, addr, msg)
+                msg = ""
+
             if "Rock_Shore" in msg:
                 print("In if statement " + msg)
                 update_drinkDB(conn, addr, msg)
+                msg = ""
 
 # Clear table 1 database so it clears the GUI
 def cleardb():

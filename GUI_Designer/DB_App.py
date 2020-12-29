@@ -44,18 +44,21 @@ def add_one(first,last,email):
 def add_one_drink(first):
     conn = sqlite3.connect('Orders.db')
     print(first)
-    c = conn.cursor()
-    c.execute("INSERT INTO table_1 VALUES (?)",(first,))
-    conn.commit()
+
+    for order in first.split():
+        c = conn.cursor()
+        c.execute("INSERT INTO table_1 VALUES (?)",(order,))
+        conn.commit()
     conn.close()
 
 def add_to_table_2(first):
     conn = sqlite3.connect('Orders.db')
     print(first)
+    for order in first.split():
+        c = conn.cursor()
+        c.execute("INSERT INTO table_2 VALUES (?)", (order,))
+        conn.commit()
     c = conn.cursor()
-    c.execute("INSERT INTO table_2 VALUES (?)",(first,))
-    conn.commit()
-    conn.close()
 
 # def add_one_drink(first):
 #     conn = sqlite3.connect('Drink.db')
