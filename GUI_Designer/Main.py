@@ -8,6 +8,7 @@ import  threading
 
 # Setup threads to run GUI and server
 # Refresh the GUI every 8 seconds after the program runs
+#Checking to see if git works
 class MyApp(Ui_MainWindow):
     def __init__(self, window):
         self.setupUi(window)
