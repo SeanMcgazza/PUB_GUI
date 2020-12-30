@@ -68,108 +68,117 @@ def start():
 # Order from table 2 has come in now read all of the order
 def update_table_2(conn, addr):
     connected = True
-    while connected:
-        print("In connected new part table 2")
-        msg_length = conn.recv(HEADER).decode(FORMAT)  # Where going to recieve a mesage from client
-        if msg_length:
-            print(f"The message length {msg_length}")
-            msg_length = int(msg_length)
-            msg = conn.recv(msg_length).decode(FORMAT)
-            print("This is the message received :" + msg)
-            if "Clear" in msg:
-                clear_table2_db()
+    try:
+        while connected:
+            print("In connected new part table 2")
+            msg_length = conn.recv(HEADER).decode(FORMAT)  # Where going to recieve a mesage from client
+            if msg_length:
+                print(f"The message length {msg_length}")
+                msg_length = int(msg_length)
+                msg = conn.recv(msg_length).decode(FORMAT)
+                print("This is the message received :" + msg)
+                if "Clear" in msg:
+                    clear_table2_db()
 
-            if "Heineken" in msg:
-                print("In if statement " + msg)
-                table_2_order(conn, addr, msg)
-                msg = ""
+                if "Heineken" in msg:
+                    print("In if statement " + msg)
+                    table_2_order(conn, addr, msg)
+                    msg = ""
 
-            if "Guinness" in msg:
-                print("In if statement " + msg)
-                table_2_order(conn, addr, msg)
-                msg = ""
+                if "Guinness" in msg:
+                    print("In if statement " + msg)
+                    table_2_order(conn, addr, msg)
+                    msg = ""
 
-            if "Burger" in msg:
-                print("In Burger if statement " + msg)
-                table_2_order(conn, addr, msg)
-                msg = ""
+                if "Burger" in msg:
+                    print("In Burger if statement " + msg)
+                    table_2_order(conn, addr, msg)
+                    msg = ""
 
-            if "Chips" in msg:
-                print("In if statement " + msg)
-                table_2_order(conn, addr, msg)
-                msg = ""
+                if "Chips" in msg:
+                    print("In if statement " + msg)
+                    table_2_order(conn, addr, msg)
+                    msg = ""
 
-            if "Kebab" in msg:
-                print("In if statement " + msg)
-                table_2_order(conn, addr, msg)
-                msg = ""
+                if "Kebab" in msg:
+                    print("In if statement " + msg)
+                    table_2_order(conn, addr, msg)
+                    msg = ""
 
-            if "Pizza" in msg:
-                print("In if statement " + msg)
-                table_2_order(conn, addr, msg)
-                msg = ""
+                if "Pizza" in msg:
+                    print("In if statement " + msg)
+                    table_2_order(conn, addr, msg)
+                    msg = ""
 
-            if "Carlsberg" in msg:
-                print("In if statement " + msg)
-                table_2_order(conn, addr, msg)
-                msg = ""
+                if "Carlsberg" in msg:
+                    print("In if statement " + msg)
+                    table_2_order(conn, addr, msg)
+                    msg = ""
 
-            if "Rock_Shore" in msg:
-                print("In if statement " + msg)
-                table_2_order(conn, addr, msg)
-                msg = ""
+                if "Rock_Shore" in msg:
+                    print("In if statement " + msg)
+                    table_2_order(conn, addr, msg)
+                    msg = ""
+    except:
+        print("Exception found in table 2")
+
 
 # Order from table 1 has come in now read all of the order
 def update_table_1(conn, addr):
     connected = True
-    while connected:
-        print("In connected new part")
-        msg_length = conn.recv(HEADER).decode(FORMAT)  # Where going to recieve a mesage from client
-        if msg_length:
-            print(f"The message length {msg_length}")
-            msg_length = int(msg_length)
-            msg = conn.recv(msg_length).decode(FORMAT)
-            if "Clear" in msg:
-                cleardb()
-            if "Heineken" in msg:
-                print("In if statement " + msg)
-                update_drinkDB(conn, addr, msg)
-                msg = ""
 
-            if "Guinness" in msg:
-                print("In if statement " + msg)
-                update_drinkDB(conn, addr, msg)
-                msg = ""
+    try:
+        while connected:
+            print("In connected new part")
+            msg_length = conn.recv(HEADER).decode(FORMAT)  # Where going to recieve a mesage from client
+            if msg_length:
+                print(f"The message length {msg_length}")
+                msg_length = int(msg_length)
+                msg = conn.recv(msg_length).decode(FORMAT)
+                if "Clear" in msg:
+                    cleardb()
+                if "Heineken" in msg:
+                    print("In if statement " + msg)
+                    update_drinkDB(conn, addr, msg)
+                    msg = ""
 
-            if "Burger" in msg:
-                print("In Burger if statement " + msg)
-                update_drinkDB(conn, addr, msg)
-                msg = ""
+                if "Guinness" in msg:
+                    print("In if statement " + msg)
+                    update_drinkDB(conn, addr, msg)
+                    msg = ""
 
-            if "Chips" in msg:
-                print("In if statement " + msg)
-                update_drinkDB(conn, addr, msg)
-                msg = ""
+                if "Burger" in msg:
+                    print("In Burger if statement " + msg)
+                    update_drinkDB(conn, addr, msg)
+                    msg = ""
 
-            if "Kebab" in msg:
-                print("In if statement " + msg)
-                update_drinkDB(conn, addr, msg)
-                msg = ""
+                if "Chips" in msg:
+                    print("In if statement " + msg)
+                    update_drinkDB(conn, addr, msg)
+                    msg = ""
 
-            if "Pizza" in msg:
-                print("In if statement " + msg)
-                update_drinkDB(conn, addr, msg)
-                msg = ""
+                if "Kebab" in msg:
+                    print("In if statement " + msg)
+                    update_drinkDB(conn, addr, msg)
+                    msg = ""
 
-            if "Carlsberg" in msg:
-                print("In if statement " + msg)
-                update_drinkDB(conn, addr, msg)
-                msg = ""
+                if "Pizza" in msg:
+                    print("In if statement " + msg)
+                    update_drinkDB(conn, addr, msg)
+                    msg = ""
 
-            if "Rock_Shore" in msg:
-                print("In if statement " + msg)
-                update_drinkDB(conn, addr, msg)
-                msg = ""
+                if "Carlsberg" in msg:
+                    print("In if statement " + msg)
+                    update_drinkDB(conn, addr, msg)
+                    msg = ""
+
+                if "Rock_Shore" in msg:
+                    print("In if statement " + msg)
+                    update_drinkDB(conn, addr, msg)
+                    msg = ""
+    except:
+        print("Exception found in table 1")
+
 
 # Clear table 1 database so it clears the GUI
 def cleardb():
