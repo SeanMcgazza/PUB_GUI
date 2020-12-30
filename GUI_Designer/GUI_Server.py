@@ -13,7 +13,7 @@ FORMAT = 'utf-8'
 DISSCONNECT_MESSAGE = "!DISCONNECT"
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.bind(ADDR)
-global table_1
+que_list = [""]
 
 # Handles all new clients that try to connect to the server
 # While connected waits for message length and message from client
@@ -34,9 +34,13 @@ def handle_client(conn, addr):
                 connected=False
                 conn.close
             if "Clear_Table_1" in msg:
+                table="Table 1 \n"
+                add_to_que_list(table)
                 cleardb()
 
             if "Clear_Table_2" in msg:
+                table = "Table 2 \n"
+                add_to_que_list(table)
                 clear_table2_db()
 
             if "Table_1" in msg:
@@ -47,35 +51,6 @@ def handle_client(conn, addr):
             if "Table_2" in msg:
                 print("In update table 2 " + msg)
                 update_table_2(conn, addr)
-                # update_drinkDB(conn, addr, msg)
-            # if "Table_2" in msg:
-            #     print("In if statement " + msg)
-            #     update_drinkDB(conn, addr, msg)
-            # if "Heineken" in msg:
-            #     print("In if statement " + msg)
-            #     update_drinkDB(conn, addr, msg)
-            # if "Guinness" in msg:
-            #     print("In if statement " + msg)
-            #     update_drinkDB(conn, addr, msg)
-            # if "Burger" in msg:
-            #     print("In if statement " + msg)
-            #     update_drinkDB(conn, addr, msg)
-            # if "Chips" in msg:
-            #     print("In if statement " + msg)
-            #     update_drinkDB(conn, addr, msg)
-            # if "Kebab" in msg:
-            #     print("In if statement " + msg)
-            #     update_drinkDB(conn, addr, msg)
-            # if "Pizza" in msg:
-            #     print("In if statement " + msg)
-            #     update_drinkDB(conn, addr, msg)
-            # if "Carlsberg" in msg:
-            #     print("In if statement " + msg)
-            #     update_drinkDB(conn, addr, msg)
-            # if "Rock_Shore" in msg:
-            #     print("In if statement " + msg)
-            #     update_drinkDB(conn, addr, msg)
-            # Find_Drink_Ordered(msg,conn)
             print(f"[{addr}] [{msg}]")
             conn.send("MSG received".encode(FORMAT))
     # conn.close
@@ -100,7 +75,7 @@ def update_table_2(conn, addr):
             print(f"The message length {msg_length}")
             msg_length = int(msg_length)
             msg = conn.recv(msg_length).decode(FORMAT)
-            print("This is the message recived :" + msg)
+            print("This is the message received :" + msg)
             if "Clear" in msg:
                 clear_table2_db()
 
@@ -209,15 +184,39 @@ def clear_table2_db():
     return
 
 # Update table 1 database with orders
+def Send_Recv_Message(conn, msg):
+    message = "Received\n"
+    conn.send(message.encode(FORMAT))
+    return_order = msg + "\n"
+    conn.send(return_order.encode(FORMAT))
+
+
 def update_drinkDB(conn, addr,msg):
-    conn.send("Drink has been ordered".encode(FORMAT))
     DB_App.add_one_drink(msg)
+    Send_Recv_Message(conn, msg)
     print("Inside update Drinkdb")
     return (conn,addr)
 
 # Update table 2 database with orders
 def table_2_order(conn, addr,msg):
-    conn.send("Drink has been ordered in table 2".encode(FORMAT))
     DB_App.add_to_table_2(msg)
+    Send_Recv_Message(conn, msg)
     print("Inside update Drinkdb")
     return (conn,addr)
+
+def add_to_que_list(table):
+    global que_list
+    que_list.append(table)
+
+def order_complete():
+    global que_list
+    try:{
+        que_list.pop(0)
+    }
+    except:
+        print("An exception occurred")
+
+
+
+def return_que_list():
+    return que_list

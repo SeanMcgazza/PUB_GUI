@@ -91,10 +91,17 @@ The remove and clear function on the app breaks the app. Try catch might be need
 ******************************************************************************************************
 Try and send the order in one bundle (json object) then less likly to loose data.
 ******************************************************************************************************
-
-
 Have a return message from the server to say that its got the order and for the customer to confirm there order
-	The server should send back what the server recived and should only display on the barside when confirmed
+	message gets sent to the CoroutineScope but cant get it to change anything out of the scop
+	if you can run a function of change a variable global to say message has been recvied
+
+*******************************************************************************************************
+
+The server should send back what the server recived and should only display on the barside when confirmed
+
+
+******************************************************************************************************
+
 
 Try to fix the que function so that the the most recent order is taken care of.
 	Maybe needs some function to clear orders once complete.(possibly from app confirmation or order)

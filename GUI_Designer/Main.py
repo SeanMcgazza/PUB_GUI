@@ -17,6 +17,7 @@ class MyApp(Ui_MainWindow):
         t1.start()
         countdown_thread.start()
         self.Order_button.clicked.connect(self.Button_Pressed)
+        self.Order_Complete.clicked.connect(self.Order_done)
 
     def Button_Pressed(self):
         self.Order_1.clear()
@@ -41,16 +42,20 @@ class MyApp(Ui_MainWindow):
         countdown_thread.start()
         self.Update_Que()
 
+    def Order_done(self):
+        GUI_Server.order_complete()
+
+
     def Update_Tables(self):
         user = DB_App.firstName_lookup("chop")
         print(user)
 
     def Update_Que(self):
         self.Order_List.clear()
-        self.Order_List.addItem("Table 1")
-        self.Order_List.addItem("Table 2")
-        self.Order_List.addItem("Table 3")
-        self.Order_List.addItem("Table 4")
+        order_que = GUI_Server.return_que_list()
+        for x in range(len(order_que)):
+            self.Order_List.addItem(order_que[x])
+
 
 
 

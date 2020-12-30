@@ -47,7 +47,7 @@
              <x>0</x>
              <y>0</y>
              <width>544</width>
-             <height>657</height>
+             <height>649</height>
             </rect>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout">
@@ -307,6 +307,24 @@
               </widget>
              </widget>
             </item>
+            <item>
+             <widget class="QPushButton" name="Order_button">
+              <property name="font">
+               <font>
+                <family>Arial</family>
+                <pointsize>12</pointsize>
+                <weight>75</weight>
+                <italic>true</italic>
+                <bold>true</bold>
+                <underline>true</underline>
+                <strikeout>false</strikeout>
+               </font>
+              </property>
+              <property name="text">
+               <string>Update Tables</string>
+              </property>
+             </widget>
+            </item>
            </layout>
           </widget>
          </widget>
@@ -322,28 +340,10 @@
              <x>0</x>
              <y>0</y>
              <width>544</width>
-             <height>657</height>
+             <height>649</height>
             </rect>
            </property>
            <layout class="QGridLayout" name="gridLayout_2">
-            <item row="1" column="0">
-             <widget class="QPushButton" name="Order_button">
-              <property name="font">
-               <font>
-                <family>Arial</family>
-                <pointsize>12</pointsize>
-                <weight>75</weight>
-                <italic>true</italic>
-                <bold>true</bold>
-                <underline>true</underline>
-                <strikeout>false</strikeout>
-               </font>
-              </property>
-              <property name="text">
-               <string>Order Complete</string>
-              </property>
-             </widget>
-            </item>
             <item row="0" column="0">
              <widget class="QComboBox" name="comboBox">
               <property name="font">
@@ -379,28 +379,6 @@
               </item>
              </widget>
             </item>
-            <item row="3" column="0">
-             <widget class="QScrollArea" name="scrollArea_7">
-              <property name="widgetResizable">
-               <bool>true</bool>
-              </property>
-              <widget class="QWidget" name="scrollAreaWidgetContents_7">
-               <property name="geometry">
-                <rect>
-                 <x>0</x>
-                 <y>0</y>
-                 <width>520</width>
-                 <height>511</height>
-                </rect>
-               </property>
-               <layout class="QVBoxLayout" name="verticalLayout_6">
-                <item>
-                 <widget class="QListWidget" name="Order_List"/>
-                </item>
-               </layout>
-              </widget>
-             </widget>
-            </item>
             <item row="2" column="0">
              <widget class="QLabel" name="Order_Que_2">
               <property name="font">
@@ -416,6 +394,38 @@
               </property>
               <property name="text">
                <string>Order Que</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+             </widget>
+            </item>
+            <item row="4" column="0">
+             <widget class="QScrollArea" name="scrollArea_7">
+              <property name="widgetResizable">
+               <bool>true</bool>
+              </property>
+              <widget class="QWidget" name="scrollAreaWidgetContents_7">
+               <property name="geometry">
+                <rect>
+                 <x>0</x>
+                 <y>0</y>
+                 <width>520</width>
+                 <height>503</height>
+                </rect>
+               </property>
+               <layout class="QVBoxLayout" name="verticalLayout_6">
+                <item>
+                 <widget class="QListWidget" name="Order_List"/>
+                </item>
+               </layout>
+              </widget>
+             </widget>
+            </item>
+            <item row="3" column="0">
+             <widget class="QPushButton" name="Order_Complete">
+              <property name="text">
+               <string>Order Complete</string>
               </property>
              </widget>
             </item>
@@ -440,8 +450,8 @@
             <rect>
              <x>0</x>
              <y>0</y>
-             <width>1097</width>
-             <height>657</height>
+             <width>1076</width>
+             <height>696</height>
             </rect>
            </property>
            <layout class="QVBoxLayout" name="verticalLayout_8">
