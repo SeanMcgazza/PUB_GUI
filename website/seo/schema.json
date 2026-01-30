@@ -1,0 +1,123 @@
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Is ChairTime really free?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. ChairTime has a free forever tier with unlimited bookings for solo stylists. We make money from optional premium features, not commissions on your earnings. You keep 100% of what you charge clients."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does ChairTime take a commission on bookings?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No, never. Unlike Fresha and other platforms, ChairTime never takes a cut of your bookings. Zero commission, zero transaction fees on appointments."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How long does it take to set up?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Most stylists are ready to accept bookings within 10 minutes. Add your services, set your hours, share your booking link. That's it."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is my client data secure?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. ChairTime is fully GDPR compliant. Your client data is encrypted, stored on EU servers, and belongs to you. We never sell data or contact your clients."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can clients book when I'm busy or closed?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "No. Clients only see your available slots. You control your working hours, break times, and days off. Block time for lunch, holidays, or personal appointments—clients can't book those times."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What if I work in a salon and at home?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "ChairTime supports multiple locations. Set different availability for each place. Clients see where you're available when booking."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I export my client list?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Export your client data anytime as CSV. Your client relationships belong to you, not the platform."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does ChairTime send appointment reminders?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. Automatic email reminders go to clients before appointments (24 hours by default, customisable). SMS reminders available on paid plans."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Is there a mobile app?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "ChairTime is a web app that works on any device. Add it to your phone's home screen for an app-like experience. Native apps are on the roadmap."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Can I cancel my account anytime?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Yes. No contracts, no cancellation fees. Export your data first if you want, then cancel from settings. We don't hold your business hostage."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Who is ChairTime NOT for?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "ChairTime is designed for independent stylists and small salons. If you need advanced inventory management, payroll for large teams, or complex multi-location corporate features, you may need enterprise software like Phorest."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Does ChairTime integrate with other software?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "ChairTime integrates with Google Calendar so appointments appear alongside your personal events. More integrations (Instagram booking button, payment processors) are on the roadmap."
+          }
+        }
+      ]
+    },
+    {
+      "@type": "SoftwareApplication",
+      "name": "ChairTime",
+      "applicationCategory": "BusinessApplication",
+      "operatingSystem": "Web",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "EUR",
+        "description": "Free tier with unlimited bookings"
+      },
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.9",
+        "ratingCount": "84"
+      }
+    }
+  ]
+}
