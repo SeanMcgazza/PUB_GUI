@@ -14,14 +14,14 @@ export function resolveRole(role: string | null | undefined): UserRole {
 // --- Navigation ---
 
 // Nav item keys that correspond to sidebar entries
-export type NavKey = 'dashboard' | 'calendar' | 'bookings' | 'clients' | 'services' | 'staff' | 'settings';
+export type NavKey = 'dashboard' | 'calendar' | 'bookings' | 'clients' | 'services' | 'staff' | 'settings' | 'blog';
 
 // Which nav items each role can see
 const navVisibility: Record<UserRole, NavKey[]> = {
-  salon_owner:        ['dashboard', 'calendar', 'bookings', 'clients', 'services', 'staff', 'settings'],
-  independent_stylist: ['dashboard', 'calendar', 'bookings', 'clients', 'services', 'settings'],
-  salon_manager:      ['dashboard', 'calendar', 'bookings', 'clients', 'services', 'staff', 'settings'],
-  chair_renter:       ['dashboard', 'calendar', 'bookings', 'clients', 'services', 'settings'],
+  salon_owner:        ['dashboard', 'calendar', 'bookings', 'clients', 'services', 'staff', 'settings', 'blog'],
+  independent_stylist: ['dashboard', 'calendar', 'bookings', 'clients', 'services', 'settings', 'blog'],
+  salon_manager:      ['dashboard', 'calendar', 'bookings', 'clients', 'services', 'staff', 'settings', 'blog'],
+  chair_renter:       ['dashboard', 'calendar', 'bookings', 'clients', 'services', 'settings', 'blog'],
 };
 
 // Label overrides per role (only specify overrides, fallback to default label)

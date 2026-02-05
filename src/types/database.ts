@@ -9,6 +9,56 @@ export type Json =
 export interface Database {
   public: {
     Tables: {
+      blog_posts: {
+        Row: {
+          id: string;
+          author_id: string | null;
+          title: string;
+          slug: string;
+          excerpt: string;
+          content: string;
+          cover_image_url: string | null;
+          published: boolean;
+          published_at: string | null;
+          tags: string[];
+          meta_title: string | null;
+          meta_description: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          author_id?: string | null;
+          title: string;
+          slug: string;
+          excerpt?: string;
+          content?: string;
+          cover_image_url?: string | null;
+          published?: boolean;
+          published_at?: string | null;
+          tags?: string[];
+          meta_title?: string | null;
+          meta_description?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          author_id?: string | null;
+          title?: string;
+          slug?: string;
+          excerpt?: string;
+          content?: string;
+          cover_image_url?: string | null;
+          published?: boolean;
+          published_at?: string | null;
+          tags?: string[];
+          meta_title?: string | null;
+          meta_description?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+      };
       profiles: {
         Row: {
           id: string;

@@ -12,7 +12,7 @@ import { useRoleAccess } from '@/hooks/useRoleAccess';
 import type { NavKey } from '@/lib/role-config';
 import { 
   Scissors, LayoutDashboard, Calendar, ClipboardList, 
-  Users, Sparkles, UserCog, Settings, Plus, Bell, LogOut
+  Users, Sparkles, UserCog, Settings, Plus, Bell, LogOut, Newspaper
 } from 'lucide-react';
 
 // Each nav item now has a key for role-based filtering
@@ -24,6 +24,7 @@ const allNavItems: { key: NavKey; href: string; icon: typeof LayoutDashboard; la
   { key: 'services',  href: '/app/services', icon: Sparkles, label: 'Services' },
   { key: 'staff',     href: '/app/staff', icon: UserCog, label: 'Staff' },
   { key: 'settings',  href: '/app/settings', icon: Settings, label: 'Settings' },
+  { key: 'blog',      href: '/app/blog', icon: Newspaper, label: 'Blog' },
 ];
 
 interface AppShellProps {
