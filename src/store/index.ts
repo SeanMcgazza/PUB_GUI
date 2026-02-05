@@ -11,6 +11,15 @@ import {
 } from '@/data/mockData';
 import { format, startOfWeek, endOfWeek, isWithinInterval, parseISO, startOfMonth, isAfter } from 'date-fns';
 
+// Buffer time between appointments (minutes)
+const BUFFER_MINUTES = 15;
+
+// Helper to convert time string to minutes
+const timeToMinutes = (time: string): number => {
+  const [hour, min] = time.split(':').map(Number);
+  return hour * 60 + min;
+};
+
 interface StoreState {
   // Data
   business: Business;
@@ -166,7 +175,8 @@ export const useStore = create<StoreState>()(
       addClient: (clientData) => {
         const newClient: Client = {
           ...clientData,
-          id: generateId('cli'),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          id: (clientData as any).id || generateId('cli'), // Support pre-generated ID
           totalVisits: 0,
           totalSpent: 0,
           createdAt: new Date().toISOString(),
@@ -187,6 +197,26 @@ export const useStore = create<StoreState>()(
       
       // Bookings
       addBooking: (bookingData) => {
+        // Re-check availability at submission time to prevent double booking
+        const existingBookings = get().bookings.filter(b => 
+          b.date === bookingData.date && b.status !== 'cancelled'
+        );
+        
+        const newStart = timeToMinutes(bookingData.startTime);
+        const newEnd = timeToMinutes(bookingData.endTime);
+        
+        const hasConflict = existingBookings.some(booking => {
+          const bookingStart = timeToMinutes(booking.startTime);
+          const bookingEnd = timeToMinutes(booking.endTime);
+          // Include buffer time in conflict check
+          const bookingEndWithBuffer = bookingEnd + BUFFER_MINUTES;
+          return (newStart < bookingEndWithBuffer && newEnd > bookingStart);
+        });
+        
+        if (hasConflict) {
+          throw new Error('This time slot is no longer available');
+        }
+        
         const newBooking: Booking = {
           ...bookingData,
           id: generateId('book'),
@@ -234,6 +264,8 @@ export const useStore = create<StoreState>()(
                   : c
               )
             }));
+            // Award loyalty points
+            get().addLoyaltyPoints(booking.clientId, booking.price);
             get().addActivity({ 
               type: 'booking_completed', 
               message: `Completed: ${client.firstName} ${client.lastName} - ${service.name}`,
@@ -468,6 +500,7 @@ export const useStore = create<StoreState>()(
             };
           })
           .filter(i => i.hasBirthdaySoon)
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           .sort((a, b) => (a as any).daysUntilBirthday - (b as any).daysUntilBirthday);
       },
       

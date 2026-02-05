@@ -43,7 +43,7 @@ export function ClientInsights() {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-orange-600 mb-3">
-              These clients haven't visited in 60+ days
+              These clients haven&apos;t visited in 60+ days
             </p>
             <div className="space-y-2">
               {atRiskClients.slice(0, 3).map(({ client, daysSinceLastVisit }) => (

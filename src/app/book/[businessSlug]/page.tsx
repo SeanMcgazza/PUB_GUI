@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useStore } from '@/store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -11,57 +11,129 @@ import { TimeSlot } from '@/components/ui/time-slot';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Scissors, MapPin, Phone, Mail, ArrowLeft, ArrowRight, 
-  Check, Calendar, Clock, User, Sparkles
+  Check, Calendar, Clock, User, Sparkles, Loader2
 } from 'lucide-react';
-import { format, addDays, parseISO } from 'date-fns';
+import { format, addDays, parseISO, addHours, isAfter, getDay } from 'date-fns';
 import { Service } from '@/types';
 import confetti from 'canvas-confetti';
+import { generateId, isValidEmail, isValidPhone, timeToMinutes } from '@/lib/utils';
 
 const STEPS = ['Service', 'Date & Time', 'Your Details', 'Confirm'];
-
-const generateTimeSlots = () => {
-  const slots: string[] = [];
-  for (let hour = 9; hour < 18; hour++) {
-    slots.push(`${hour.toString().padStart(2, '0')}:00`);
-    slots.push(`${hour.toString().padStart(2, '0')}:30`);
-  }
-  return slots;
-};
+const BUFFER_MINUTES = 15;
 
 export default function PublicBookingPage() {
-  const { business, services, categories, addBooking, addClient, getBookingsForDate, clients } = useStore();
+  const { business, services, categories, addBooking, addClient, getBookingsForDate, clients, availability } = useStore();
   
   const [step, setStep] = useState(0);
   const [selectedService, setSelectedService] = useState<Service | null>(null);
   const [selectedDate, setSelectedDate] = useState(format(addDays(new Date(), 1), 'yyyy-MM-dd'));
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
     email: '',
     phone: '',
   });
+  const [formErrors, setFormErrors] = useState<{
+    email?: string;
+    phone?: string;
+  }>({});
   
-  const timeSlots = generateTimeSlots();
   const existingBookings = getBookingsForDate(selectedDate);
   const activeServices = services.filter(s => s.isActive);
   
+  // Get day availability for selected date
+  const getDayAvailability = (dateStr: string) => {
+    const date = parseISO(dateStr);
+    const dayOfWeek = getDay(date); // 0 = Sunday
+    return availability.schedule.find(s => s.dayOfWeek === dayOfWeek);
+  };
+  
+  // Generate time slots based on business hours for selected date
+  const timeSlots = useMemo(() => {
+    const dayAvail = getDayAvailability(selectedDate);
+    if (!dayAvail || !dayAvail.isOpen || dayAvail.blocks.length === 0) {
+      return [];
+    }
+    
+    const slots: string[] = [];
+    
+    dayAvail.blocks.forEach(block => {
+      const startMinutes = timeToMinutes(block.start);
+      const endMinutes = timeToMinutes(block.end);
+      
+      for (let mins = startMinutes; mins < endMinutes; mins += 30) {
+        const hour = Math.floor(mins / 60);
+        const min = mins % 60;
+        const timeStr = `${hour.toString().padStart(2, '0')}:${min.toString().padStart(2, '0')}`;
+        
+        // Check if time is during a break
+        const isDuringBreak = dayAvail.breaks.some(brk => {
+          const breakStart = timeToMinutes(brk.start);
+          const breakEnd = timeToMinutes(brk.end);
+          return mins >= breakStart && mins < breakEnd;
+        });
+        
+        if (!isDuringBreak) {
+          slots.push(timeStr);
+        }
+      }
+    });
+    
+    return slots;
+  }, [selectedDate, availability]);
+  
+  // Check if slot is available (considers bookings, buffer, and booking notice)
   const isSlotAvailable = (time: string) => {
     if (!selectedService) return true;
     
-    const [hour, min] = time.split(':').map(Number);
-    const startMinutes = hour * 60 + min;
+    const dayAvail = getDayAvailability(selectedDate);
+    if (!dayAvail || !dayAvail.isOpen) return false;
+    
+    const startMinutes = timeToMinutes(time);
     const endMinutes = startMinutes + selectedService.duration;
     
-    return !existingBookings.some(booking => {
-      const [bStartH, bStartM] = booking.startTime.split(':').map(Number);
-      const [bEndH, bEndM] = booking.endTime.split(':').map(Number);
-      const bookingStart = bStartH * 60 + bStartM;
-      const bookingEnd = bEndH * 60 + bEndM;
-      
-      return (startMinutes < bookingEnd && endMinutes > bookingStart);
+    // Check if service fits within business hours
+    const fitsInBusinessHours = dayAvail.blocks.some(block => {
+      const blockStart = timeToMinutes(block.start);
+      const blockEnd = timeToMinutes(block.end);
+      return startMinutes >= blockStart && endMinutes <= blockEnd;
     });
+    
+    if (!fitsInBusinessHours) return false;
+    
+    // Check if service overlaps with breaks
+    const overlapWithBreak = dayAvail.breaks.some(brk => {
+      const breakStart = timeToMinutes(brk.start);
+      const breakEnd = timeToMinutes(brk.end);
+      return (startMinutes < breakEnd && endMinutes > breakStart);
+    });
+    
+    if (overlapWithBreak) return false;
+    
+    // Check booking notice (can't book within X hours)
+    const slotDateTime = new Date(`${selectedDate}T${time}`);
+    const minBookingTime = addHours(new Date(), business.bookingNotice);
+    if (!isAfter(slotDateTime, minBookingTime)) return false;
+    
+    // Check conflicts with existing bookings (including buffer time)
+    const hasConflict = existingBookings.some(booking => {
+      const bookingStart = timeToMinutes(booking.startTime);
+      const bookingEnd = timeToMinutes(booking.endTime);
+      const bookingEndWithBuffer = bookingEnd + BUFFER_MINUTES;
+      return (startMinutes < bookingEndWithBuffer && endMinutes > bookingStart);
+    });
+    
+    return !hasConflict;
+  };
+  
+  // Check if a day is open
+  const isDayOpen = (dateStr: string) => {
+    const dayAvail = getDayAvailability(dateStr);
+    return dayAvail?.isOpen ?? false;
   };
   
   const calculateEndTime = (startTime: string, duration: number) => {
@@ -72,52 +144,87 @@ export default function PublicBookingPage() {
     return `${endHour.toString().padStart(2, '0')}:${endMin.toString().padStart(2, '0')}`;
   };
   
+  // Validate form fields
+  const validateForm = () => {
+    const errors: { email?: string; phone?: string } = {};
+    
+    if (!isValidEmail(formData.email)) {
+      errors.email = 'Please enter a valid email address';
+    }
+    
+    if (!isValidPhone(formData.phone)) {
+      errors.phone = 'Please enter a valid phone number';
+    }
+    
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+  
   const canProceed = () => {
     switch (step) {
       case 0: return selectedService !== null;
-      case 1: return selectedDate && selectedTime;
-      case 2: return formData.firstName && formData.lastName && formData.email && formData.phone;
+      case 1: return selectedDate && selectedTime && isDayOpen(selectedDate);
+      case 2: {
+        const hasRequiredFields = formData.firstName && formData.lastName && formData.email && formData.phone;
+        const hasValidEmail = isValidEmail(formData.email);
+        const hasValidPhone = isValidPhone(formData.phone);
+        return hasRequiredFields && hasValidEmail && hasValidPhone;
+      }
       case 3: return true;
       default: return false;
     }
   };
   
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!selectedService || !selectedTime) return;
     
-    // Check if client exists by email
-    let clientId = clients.find(c => c.email === formData.email)?.id;
+    if (!validateForm()) return;
     
-    if (!clientId) {
-      // Create new client
-      addClient({
+    setIsSubmitting(true);
+    setError(null);
+    
+    try {
+      // Check if client exists by email
+      let clientId = clients.find(c => c.email === formData.email)?.id;
+      
+      if (!clientId) {
+        // Generate client ID BEFORE adding to ensure we have the correct ID
+        clientId = generateId('cli');
+        /* eslint-disable @typescript-eslint/no-explicit-any */
+        addClient({
+          id: clientId, // Pass the pre-generated ID
+          businessId: business.id,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: formData.email,
+          phone: formData.phone,
+        } as any);
+        /* eslint-enable @typescript-eslint/no-explicit-any */
+      }
+      
+      addBooking({
         businessId: business.id,
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        email: formData.email,
-        phone: formData.phone,
+        clientId: clientId,
+        serviceId: selectedService.id,
+        date: selectedDate,
+        startTime: selectedTime,
+        endTime: calculateEndTime(selectedTime, selectedService.duration),
+        status: 'pending',
+        price: selectedService.price,
       });
-      clientId = clients[clients.length - 1]?.id || 'new';
+      
+      setIsSuccess(true);
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#D4A574', '#B8A4C9', '#7DB87D', '#E5C07B'],
+      });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create booking. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
-    
-    addBooking({
-      businessId: business.id,
-      clientId: clientId,
-      serviceId: selectedService.id,
-      date: selectedDate,
-      startTime: selectedTime,
-      endTime: calculateEndTime(selectedTime, selectedService.duration),
-      status: 'pending',
-      price: selectedService.price,
-    });
-    
-    setIsSuccess(true);
-    confetti({
-      particleCount: 100,
-      spread: 70,
-      origin: { y: 0.6 },
-      colors: ['#D4A574', '#B8A4C9', '#7DB87D', '#E5C07B'],
-    });
   };
   
   if (isSuccess) {
@@ -286,26 +393,32 @@ export default function PublicBookingPage() {
                     const date = addDays(new Date(), i + 1);
                     const dateStr = format(date, 'yyyy-MM-dd');
                     const isSelected = selectedDate === dateStr;
+                    const isOpen = isDayOpen(dateStr);
                     
                     return (
                       <motion.button
                         key={dateStr}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
+                        whileHover={isOpen ? { scale: 1.05 } : {}}
+                        whileTap={isOpen ? { scale: 0.95 } : {}}
                         onClick={() => {
-                          setSelectedDate(dateStr);
-                          setSelectedTime(null);
+                          if (isOpen) {
+                            setSelectedDate(dateStr);
+                            setSelectedTime(null);
+                          }
                         }}
+                        disabled={!isOpen}
                         className={`
                           flex flex-col items-center p-3 rounded-xl min-w-[70px] transition-all
-                          ${isSelected 
-                            ? 'bg-gold text-white' 
-                            : 'bg-white border border-border hover:border-gold'}
+                          ${!isOpen 
+                            ? 'bg-muted text-muted-foreground opacity-50 cursor-not-allowed'
+                            : isSelected 
+                              ? 'bg-gold text-white' 
+                              : 'bg-white border border-border hover:border-gold'}
                         `}
                       >
                         <span className="text-xs">{format(date, 'EEE')}</span>
                         <span className="text-lg font-semibold">{format(date, 'd')}</span>
-                        <span className="text-xs">{format(date, 'MMM')}</span>
+                        <span className="text-xs">{isOpen ? format(date, 'MMM') : 'Closed'}</span>
                       </motion.button>
                     );
                   })}
@@ -374,9 +487,16 @@ export default function PublicBookingPage() {
                       id="email"
                       type="email"
                       value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      onChange={(e) => {
+                        setFormData({ ...formData, email: e.target.value });
+                        if (formErrors.email) setFormErrors({ ...formErrors, email: undefined });
+                      }}
                       placeholder="emma@example.com"
+                      className={formErrors.email ? 'border-red-500' : ''}
                     />
+                    {formErrors.email && (
+                      <p className="text-sm text-red-500 mt-1">{formErrors.email}</p>
+                    )}
                   </div>
                   
                   <div>
@@ -385,9 +505,16 @@ export default function PublicBookingPage() {
                       id="phone"
                       type="tel"
                       value={formData.phone}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      onChange={(e) => {
+                        setFormData({ ...formData, phone: e.target.value });
+                        if (formErrors.phone) setFormErrors({ ...formErrors, phone: undefined });
+                      }}
                       placeholder="+353 87 123 4567"
+                      className={formErrors.phone ? 'border-red-500' : ''}
                     />
+                    {formErrors.phone && (
+                      <p className="text-sm text-red-500 mt-1">{formErrors.phone}</p>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -455,6 +582,12 @@ export default function PublicBookingPage() {
               <p className="text-sm text-muted-foreground mt-4">
                 {business.cancellationPolicy}
               </p>
+              
+              {error && (
+                <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-sm text-red-600">{error}</p>
+                </div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
@@ -486,10 +619,20 @@ export default function PublicBookingPage() {
           ) : (
             <Button
               onClick={handleSubmit}
+              disabled={isSubmitting}
               className="flex-1 bg-gold hover:bg-gold-dark text-white"
             >
-              <Check className="w-4 h-4 mr-2" />
-              Confirm Booking
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Booking...
+                </>
+              ) : (
+                <>
+                  <Check className="w-4 h-4 mr-2" />
+                  Confirm Booking
+                </>
+              )}
             </Button>
           )}
         </div>
