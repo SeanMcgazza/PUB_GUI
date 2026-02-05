@@ -8,6 +8,7 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
+import { useProfile } from '@/hooks/useProfile';
 import { 
   Scissors, LayoutDashboard, Calendar, ClipboardList, 
   Users, Sparkles, Settings, Menu, Plus, Bell, LogOut
@@ -30,6 +31,7 @@ export function AppShell({ children }: AppShellProps) {
   const pathname = usePathname();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const { user, signOut } = useAuth();
+  const { profile } = useProfile();
   
   return (
     <div className="min-h-screen bg-cream">
@@ -84,7 +86,7 @@ export function AppShell({ children }: AppShellProps) {
             <div className="border-t border-border pt-3">
               <div className="px-1 mb-2">
                 <p className="text-sm font-medium text-warm-brown truncate">
-                  {user?.user_metadata?.business_name || 'My Salon'}
+                  {profile?.business_name || user?.user_metadata?.business_name || 'My Salon'}
                 </p>
                 <p className="text-xs text-muted-foreground truncate">
                   {user?.email || ''}

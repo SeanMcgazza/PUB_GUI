@@ -1,11 +1,9 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
-import { AppShell } from '@/components/layout/app-shell';
-import { BookingNotifier } from '@/components/booking-notifier';
 
 export const dynamic = 'force-dynamic';
 
-export default async function AppLayout({
+export default async function OnboardingLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -19,21 +17,16 @@ export default async function AppLayout({
     redirect('/login');
   }
 
-  // Check if onboarding is complete (slug is set during onboarding)
+  // If user already completed onboarding (has a slug), skip to dashboard
   const { data: profile } = await supabase
     .from('profiles')
     .select('slug')
     .eq('id', user.id)
     .single() as { data: { slug: string | null } | null };
 
-  if (!profile?.slug) {
-    redirect('/onboarding');
+  if (profile?.slug) {
+    redirect('/app');
   }
 
-  return (
-    <>
-      <AppShell>{children}</AppShell>
-      <BookingNotifier />
-    </>
-  );
+  return <>{children}</>;
 }

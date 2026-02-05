@@ -53,7 +53,11 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname.startsWith('/book/');
 
   // If user is not authenticated and trying to access protected route
-  if (!user && !isPublicRoute && request.nextUrl.pathname.startsWith('/app')) {
+  if (
+    !user &&
+    !isPublicRoute &&
+    (request.nextUrl.pathname.startsWith('/app') || request.nextUrl.pathname.startsWith('/onboarding'))
+  ) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
     return NextResponse.redirect(url);

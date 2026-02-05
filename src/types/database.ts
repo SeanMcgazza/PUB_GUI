@@ -25,6 +25,7 @@ export interface Database {
           cancellation_policy: string | null;
           logo_url: string | null;
           cover_image_url: string | null;
+          role: string;
           created_at: string;
           updated_at: string;
         };
@@ -43,6 +44,7 @@ export interface Database {
           cancellation_policy?: string | null;
           logo_url?: string | null;
           cover_image_url?: string | null;
+          role?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -61,6 +63,7 @@ export interface Database {
           cancellation_policy?: string | null;
           logo_url?: string | null;
           cover_image_url?: string | null;
+          role?: string;
           created_at?: string;
           updated_at?: string;
         };
@@ -292,6 +295,7 @@ export interface Database {
           require_deposit: boolean;
           deposit_amount: number;
           cancellation_hours: number;
+          business_hours: Json;
           created_at: string;
           updated_at: string;
         };
@@ -304,6 +308,7 @@ export interface Database {
           require_deposit?: boolean;
           deposit_amount?: number;
           cancellation_hours?: number;
+          business_hours?: Json;
           created_at?: string;
           updated_at?: string;
         };
@@ -316,6 +321,7 @@ export interface Database {
           require_deposit?: boolean;
           deposit_amount?: number;
           cancellation_hours?: number;
+          business_hours?: Json;
           created_at?: string;
           updated_at?: string;
         };

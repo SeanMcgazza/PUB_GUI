@@ -1,6 +1,7 @@
 'use client';
 
 import { useStore } from '@/store';
+import { useProfile } from '@/hooks/useProfile';
 import { StatCard } from '@/components/ui/stat-card';
 import { BookingCard } from '@/components/cards/booking-card';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -24,6 +25,7 @@ function getGreeting() {
 }
 
 export default function DashboardPage() {
+  const { profile } = useProfile();
   const { 
     business, 
     getDashboardStats, 
@@ -36,6 +38,7 @@ export default function DashboardPage() {
   
   const stats = getDashboardStats();
   const upcomingBookings = getUpcomingBookings(5);
+  const displayName = profile?.business_name || business.name || 'there';
   
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto">
@@ -46,7 +49,7 @@ export default function DashboardPage() {
         className="mb-8"
       >
         <h1 className="text-2xl md:text-3xl font-bold text-warm-brown">
-          {getGreeting()}, Sarah! ✨
+          {getGreeting()}, {displayName}! ✨
         </h1>
         <p className="text-muted-foreground mt-1">
           Here&apos;s what&apos;s happening at {business.name} today.
