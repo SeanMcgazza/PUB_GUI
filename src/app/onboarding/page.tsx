@@ -202,7 +202,10 @@ export default function OnboardingPage() {
       if (!user) throw new Error('Not authenticated');
 
       // 1. Update profile with business name, slug, and role
-      const { error: profileError } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const sb = supabase as any;
+      
+      const { error: profileError } = await sb
         .from('profiles')
         .update({
           business_name: salonName,
@@ -216,7 +219,7 @@ export default function OnboardingPage() {
       // 2. Create service categories and default services
       for (let i = 0; i < selectedCategories.length; i++) {
         const catName = selectedCategories[i];
-        const { data: category, error: catError } = await supabase
+        const { data: category, error: catError } = await sb
           .from('service_categories')
           .insert({
             business_id: user.id,
@@ -230,8 +233,8 @@ export default function OnboardingPage() {
 
         const defaults = defaultServices[catName] || [];
         if (defaults.length > 0) {
-          const { error: svcError } = await supabase.from('services').insert(
-            defaults.map((svc) => ({
+          const { error: svcError } = await sb.from('services').insert(
+            defaults.map((svc: { name: string; duration: number; price: number }) => ({
               business_id: user.id,
               category_id: category.id,
               name: svc.name,
@@ -252,7 +255,7 @@ export default function OnboardingPage() {
         closeTime: h.closeTime,
       }));
 
-      const { error: settingsError } = await supabase.from('booking_settings').upsert(
+      const { error: settingsError } = await sb.from('booking_settings').upsert(
         {
           business_id: user.id,
           business_hours: businessHoursJson,
