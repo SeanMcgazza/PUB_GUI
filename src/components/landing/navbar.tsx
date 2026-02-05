@@ -8,9 +8,9 @@ import { Menu, Scissors, X } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const navLinks = [
-  { href: '#features', label: 'Features' },
-  { href: '#pricing', label: 'Pricing' },
-  { href: '#faq', label: 'FAQ' },
+  { href: '/#features', label: 'Features' },
+  { href: '/#pricing', label: 'Pricing' },
+  { href: '/#faq', label: 'FAQ' },
   { href: '/blog', label: 'Blog' },
 ];
 
