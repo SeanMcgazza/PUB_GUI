@@ -5,8 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import { 
-  AlertTriangle, Gift, Heart, Users, 
-  Clock, Star, Share2, TrendingUp 
+  AlertTriangle, Gift, Heart,
+  Star, Share2
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import Link from 'next/link';

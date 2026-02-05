@@ -13,7 +13,7 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Search, Plus, Users, Phone, Mail, AlertTriangle, 
-  Calendar, Euro, Clock, X, Edit, Trash
+  Edit, Trash
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { Client } from '@/types';

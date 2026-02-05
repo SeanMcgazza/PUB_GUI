@@ -500,8 +500,7 @@ export const useStore = create<StoreState>()(
             };
           })
           .filter(i => i.hasBirthdaySoon)
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          .sort((a, b) => (a as any).daysUntilBirthday - (b as any).daysUntilBirthday);
+          .sort((a, b) => a.daysUntilBirthday - b.daysUntilBirthday);
       },
       
       getClientInsights: () => {

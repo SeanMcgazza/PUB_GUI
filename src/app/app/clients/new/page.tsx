@@ -14,7 +14,7 @@ import confetti from 'canvas-confetti';
 
 export default function NewClientPage() {
   const router = useRouter();
-  const { addClient } = useStore();
+  const { business, addClient } = useStore();
   const [isSuccess, setIsSuccess] = useState(false);
   
   const [formData, setFormData] = useState({
@@ -35,7 +35,7 @@ export default function NewClientPage() {
     if (!isValid) return;
     
     addClient({
-      businessId: 'biz_001',
+      businessId: business.id,
       firstName: formData.firstName,
       lastName: formData.lastName,
       email: formData.email,

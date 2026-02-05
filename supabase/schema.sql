@@ -24,6 +24,7 @@ create table public.profiles (
   cancellation_policy text default 'Free cancellation up to 24 hours before your appointment.',
   logo_url text,
   cover_image_url text,
+  role text not null default '',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -71,10 +72,16 @@ create policy "Business owner can manage staff"
   on public.staff for all
   using (auth.uid() = business_id);
 
--- Public: anyone can view active staff (for public booking page)
+-- Public: anyone can view active staff for businesses with a public booking page
 create policy "Public can view active staff"
   on public.staff for select
-  using (is_active = true);
+  using (
+    is_active = true and exists (
+      select 1 from public.profiles
+      where profiles.id = staff.business_id
+        and profiles.slug is not null
+    )
+  );
 
 -- ============================================================
 -- SERVICE CATEGORIES
@@ -95,10 +102,16 @@ create policy "Business owner can manage categories"
   on public.service_categories for all
   using (auth.uid() = business_id);
 
--- Public: anyone can view categories (for public booking page)
+-- Public: anyone can view categories that belong to a business with a public booking page (slug set)
 create policy "Public can view service categories"
   on public.service_categories for select
-  using (true);
+  using (
+    exists (
+      select 1 from public.profiles
+      where profiles.id = service_categories.business_id
+        and profiles.slug is not null
+    )
+  );
 
 -- ============================================================
 -- SERVICES
@@ -123,10 +136,16 @@ create policy "Business owner can manage services"
   on public.services for all
   using (auth.uid() = business_id);
 
--- Public: anyone can view active services (for public booking page)
+-- Public: anyone can view active services for businesses with a public booking page
 create policy "Public can view active services"
   on public.services for select
-  using (is_active = true);
+  using (
+    is_active = true and exists (
+      select 1 from public.profiles
+      where profiles.id = services.business_id
+        and profiles.slug is not null
+    )
+  );
 
 -- ============================================================
 -- CLIENTS
@@ -168,7 +187,7 @@ create table public.bookings (
   date date not null,
   start_time time not null,
   end_time time not null,
-  status text not null default 'pending' check (status in ('pending', 'confirmed', 'cancelled', 'completed', 'no_show')),
+  status text not null default 'pending' check (status in ('pending', 'confirmed', 'cancelled', 'completed', 'no-show')),
   price numeric(10, 2) not null default 0,
   notes text,
   reminder_sent boolean not null default false,
@@ -182,10 +201,16 @@ create policy "Business owner can manage bookings"
   on public.bookings for all
   using (auth.uid() = business_id);
 
--- Public: anyone can INSERT bookings (for public booking page)
+-- Public: anyone can INSERT bookings for businesses with a public booking page
 create policy "Public can create bookings"
   on public.bookings for insert
-  with check (true);
+  with check (
+    exists (
+      select 1 from public.profiles
+      where profiles.id = bookings.business_id
+        and profiles.slug is not null
+    )
+  );
 
 -- ============================================================
 -- BOOKING SETTINGS
@@ -199,6 +224,7 @@ create table public.booking_settings (
   require_deposit boolean not null default false,
   deposit_amount numeric(10, 2) not null default 0,
   cancellation_hours integer not null default 24,
+  business_hours jsonb default '[]'::jsonb,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -208,6 +234,17 @@ alter table public.booking_settings enable row level security;
 create policy "Business owner can manage booking settings"
   on public.booking_settings for all
   using (auth.uid() = business_id);
+
+-- Public: anyone can view booking settings for businesses with a public booking page
+create policy "Public can view booking settings"
+  on public.booking_settings for select
+  using (
+    exists (
+      select 1 from public.profiles
+      where profiles.id = booking_settings.business_id
+        and profiles.slug is not null
+    )
+  );
 
 -- ============================================================
 -- ACTIVITIES

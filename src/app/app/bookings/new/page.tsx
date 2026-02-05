@@ -34,7 +34,7 @@ const generateTimeSlots = () => {
 
 export default function NewBookingPage() {
   const router = useRouter();
-  const { clients, services, categories, addBooking, getBookingsForDate } = useStore();
+  const { business, clients, services, categories, addBooking, getBookingsForDate } = useStore();
   
   const [step, setStep] = useState(0);
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
@@ -96,7 +96,7 @@ export default function NewBookingPage() {
     if (!selectedClient || !selectedService || !selectedTime) return;
     
     addBooking({
-      businessId: 'biz_001',
+      businessId: business.id,
       clientId: selectedClient.id,
       serviceId: selectedService.id,
       date: selectedDate,

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -12,7 +12,7 @@ import { useRoleAccess } from '@/hooks/useRoleAccess';
 import type { NavKey } from '@/lib/role-config';
 import { 
   Scissors, LayoutDashboard, Calendar, ClipboardList, 
-  Users, Sparkles, UserCog, Settings, Menu, Plus, Bell, LogOut
+  Users, Sparkles, UserCog, Settings, Plus, Bell, LogOut
 } from 'lucide-react';
 
 // Each nav item now has a key for role-based filtering
@@ -32,7 +32,6 @@ interface AppShellProps {
 
 export function AppShell({ children }: AppShellProps) {
   const pathname = usePathname();
-  const [isMobileOpen, setIsMobileOpen] = useState(false);
   const { user, signOut } = useAuth();
   const { profile } = useProfile();
   const { isNavVisible, navLabel } = useRoleAccess();

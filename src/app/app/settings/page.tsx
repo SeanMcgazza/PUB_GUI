@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { motion } from 'framer-motion';
 import { 
-  Building2, Clock, Globe, Bell, Palette, 
+  Building2, Clock, Globe,
   Copy, Check, ExternalLink
 } from 'lucide-react';
 
@@ -33,7 +33,7 @@ export default function SettingsPage() {
     bookingNotice: business.bookingNotice,
   });
   
-  const bookingUrl = `https://chairtime.ie/book/${business.slug}`;
+  const bookingUrl = `https://chairtime.vercel.app/book/${business.slug}`;
   
   const handleCopyLink = () => {
     navigator.clipboard.writeText(bookingUrl);

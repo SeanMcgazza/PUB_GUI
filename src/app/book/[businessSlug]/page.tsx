@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, use } from 'react';
 import { useStore } from '@/store';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,7 @@ import { ServiceCard } from '@/components/cards/service-card';
 import { TimeSlot } from '@/components/ui/time-slot';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Scissors, MapPin, Phone, Mail, ArrowLeft, ArrowRight, 
+  Scissors, MapPin, ArrowLeft, ArrowRight, 
   Check, Calendar, Clock, User, Sparkles, Loader2
 } from 'lucide-react';
 import { format, addDays, parseISO, addHours, isAfter, getDay } from 'date-fns';
@@ -21,7 +21,11 @@ import { generateId, isValidEmail, isValidPhone, timeToMinutes } from '@/lib/uti
 const STEPS = ['Service', 'Date & Time', 'Your Details', 'Confirm'];
 const BUFFER_MINUTES = 15;
 
-export default function PublicBookingPage() {
+export default function PublicBookingPage(
+  props: { params: Promise<{ businessSlug: string }> }
+) {
+  // In Next.js 16, params is a Promise — unwrap it
+  const { businessSlug } = use(props.params);
   const { business, services, categories, addBooking, addClient, getBookingsForDate, clients, availability } = useStore();
   
   const [step, setStep] = useState(0);

@@ -24,7 +24,7 @@ const SERVICE_COLORS = [
 ];
 
 export default function ServicesPage() {
-  const { services, categories, addService, updateService, deleteService, toggleServiceActive } = useStore();
+  const { business, services, categories, addService, updateService, deleteService, toggleServiceActive } = useStore();
   const [activeCategory, setActiveCategory] = useState(categories[0]?.id || '');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingService, setEditingService] = useState<Service | null>(null);
@@ -78,7 +78,7 @@ export default function ServicesPage() {
       });
     } else {
       addService({
-        businessId: 'biz_001',
+        businessId: business.id,
         name: formData.name,
         description: formData.description || undefined,
         duration: formData.duration,

@@ -9,11 +9,11 @@ import { ClientAvatar } from '@/components/ui/client-avatar';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { motion } from 'framer-motion';
 import { 
-  ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon
+  ChevronLeft, ChevronRight, Plus
 } from 'lucide-react';
 import { 
   format, addDays, subDays, startOfWeek, endOfWeek, 
-  eachDayOfInterval, isSameDay, isToday, addWeeks, subWeeks
+  eachDayOfInterval, isToday, addWeeks, subWeeks
 } from 'date-fns';
 import Link from 'next/link';
 
@@ -23,7 +23,7 @@ export default function CalendarPage() {
   const [view, setView] = useState<'day' | 'week' | 'agenda'>('day');
   const [currentDate, setCurrentDate] = useState(new Date());
   
-  const { getBookingsForDate, getBookingsForWeek, getClientById, getServiceById, updateBookingStatus } = useStore();
+  const { getBookingsForDate, getBookingsForWeek, getClientById, getServiceById } = useStore();
   
   const goToToday = () => setCurrentDate(new Date());
   const goBack = () => {

@@ -10,6 +10,21 @@ export async function GET(request: Request) {
     const supabase = await createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
+      // Check if the user has completed onboarding (has a slug)
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('slug')
+          .eq('id', user.id)
+          .single() as { data: { slug: string | null } | null };
+
+        // Redirect to onboarding if no slug set (new user)
+        if (!profile?.slug) {
+          return NextResponse.redirect(`${origin}/onboarding`);
+        }
+      }
+
       return NextResponse.redirect(`${origin}${next}`);
     }
   }

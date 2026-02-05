@@ -201,10 +201,24 @@ export default function OnboardingPage() {
       } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      // 1. Update profile with business name, slug, and role
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const sb = supabase as any;
-      
+
+      // 0. Check slug uniqueness before saving
+      const { data: existingProfile } = await sb
+        .from('profiles')
+        .select('id')
+        .eq('slug', slug)
+        .neq('id', user.id)
+        .maybeSingle();
+
+      if (existingProfile) {
+        throw new Error(
+          `The booking link "${slug}" is already taken. Please go back and choose a different name or edit your link.`
+        );
+      }
+
+      // 1. Update profile with business name, slug, and role
       const { error: profileError } = await sb
         .from('profiles')
         .update({

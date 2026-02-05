@@ -3,6 +3,7 @@
 import { useStore } from '@/store';
 import { useProfile } from '@/hooks/useProfile';
 import { useRoleAccess } from '@/hooks/useRoleAccess';
+import { cn } from '@/lib/utils';
 import { StatCard } from '@/components/ui/stat-card';
 import { BookingCard } from '@/components/cards/booking-card';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,7 +14,7 @@ import { BookingQRCode } from '@/components/booking-qr-code';
 import { motion } from 'framer-motion';
 import { 
   Calendar, Euro, Users, Clock, Plus, ArrowRight,
-  TrendingUp, AlertCircle, CheckCircle, QrCode, Heart
+  TrendingUp, AlertCircle, CheckCircle, Heart
 } from 'lucide-react';
 import Link from 'next/link';
 import { format } from 'date-fns';
@@ -280,9 +281,4 @@ export default function DashboardPage() {
       )}
     </div>
   );
-}
-
-// Helper for conditional classnames (already in utils, but inline for clarity)
-function cn(...classes: (string | false | undefined)[]) {
-  return classes.filter(Boolean).join(' ');
 }
