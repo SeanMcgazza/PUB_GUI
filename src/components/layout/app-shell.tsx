@@ -1,26 +1,29 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
+import { useRoleAccess } from '@/hooks/useRoleAccess';
+import type { NavKey } from '@/lib/role-config';
 import { 
   Scissors, LayoutDashboard, Calendar, ClipboardList, 
-  Users, Sparkles, Settings, Menu, Plus, Bell, LogOut
+  Users, Sparkles, UserCog, Settings, Menu, Plus, Bell, LogOut
 } from 'lucide-react';
 
-const navItems = [
-  { href: '/app', icon: LayoutDashboard, label: 'Dashboard' },
-  { href: '/app/calendar', icon: Calendar, label: 'Calendar' },
-  { href: '/app/bookings', icon: ClipboardList, label: 'Bookings' },
-  { href: '/app/clients', icon: Users, label: 'Clients' },
-  { href: '/app/services', icon: Sparkles, label: 'Services' },
-  { href: '/app/settings', icon: Settings, label: 'Settings' },
+// Each nav item now has a key for role-based filtering
+const allNavItems: { key: NavKey; href: string; icon: typeof LayoutDashboard; label: string }[] = [
+  { key: 'dashboard', href: '/app', icon: LayoutDashboard, label: 'Dashboard' },
+  { key: 'calendar',  href: '/app/calendar', icon: Calendar, label: 'Calendar' },
+  { key: 'bookings',  href: '/app/bookings', icon: ClipboardList, label: 'Bookings' },
+  { key: 'clients',   href: '/app/clients', icon: Users, label: 'Clients' },
+  { key: 'services',  href: '/app/services', icon: Sparkles, label: 'Services' },
+  { key: 'staff',     href: '/app/staff', icon: UserCog, label: 'Staff' },
+  { key: 'settings',  href: '/app/settings', icon: Settings, label: 'Settings' },
 ];
 
 interface AppShellProps {
@@ -32,6 +35,20 @@ export function AppShell({ children }: AppShellProps) {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const { user, signOut } = useAuth();
   const { profile } = useProfile();
+  const { isNavVisible, navLabel } = useRoleAccess();
+
+  // Filter and relabel nav items based on role
+  const navItems = useMemo(() => {
+    return allNavItems
+      .filter((item) => isNavVisible(item.key))
+      .map((item) => ({
+        ...item,
+        label: navLabel(item.key, item.label),
+      }));
+  }, [isNavVisible, navLabel]);
+
+  // For mobile bottom nav, show first 5 visible items
+  const mobileNavItems = navItems.slice(0, 5);
   
   return (
     <div className="min-h-screen bg-cream">
@@ -141,15 +158,15 @@ export function AppShell({ children }: AppShellProps) {
       
       {/* Mobile Bottom Nav */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-border h-16 flex items-center justify-around px-2">
-        {navItems.slice(0, 5).map((item, index) => {
+        {mobileNavItems.map((item, index) => {
           const isActive = pathname === item.href || 
             (item.href !== '/app' && pathname.startsWith(item.href));
           
-          // Insert FAB in the middle
+          // Insert FAB in the middle (after index 2)
           if (index === 2) {
             return (
               <div key="fab" className="flex items-center gap-2">
-                <NavItem item={navItems[2]} isActive={pathname === navItems[2].href || pathname.startsWith('/app/bookings')} />
+                <MobileNavItem item={item} isActive={isActive} />
                 <Link href="/app/bookings/new">
                   <motion.button
                     whileHover={{ scale: 1.05 }}
@@ -163,18 +180,14 @@ export function AppShell({ children }: AppShellProps) {
             );
           }
           
-          if (index > 2) {
-            return <NavItem key={item.href} item={navItems[index]} isActive={pathname === navItems[index].href || (navItems[index].href !== '/app' && pathname.startsWith(navItems[index].href))} />;
-          }
-          
-          return <NavItem key={item.href} item={item} isActive={isActive} />;
+          return <MobileNavItem key={item.href} item={item} isActive={isActive} />;
         })}
       </nav>
     </div>
   );
 }
 
-function NavItem({ item, isActive }: { item: typeof navItems[0]; isActive: boolean }) {
+function MobileNavItem({ item, isActive }: { item: { href: string; icon: typeof LayoutDashboard; label: string }; isActive: boolean }) {
   return (
     <Link href={item.href}>
       <div className={cn(

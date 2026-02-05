@@ -2,6 +2,7 @@
 
 import { useStore } from '@/store';
 import { useProfile } from '@/hooks/useProfile';
+import { useRoleAccess } from '@/hooks/useRoleAccess';
 import { StatCard } from '@/components/ui/stat-card';
 import { BookingCard } from '@/components/cards/booking-card';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -26,6 +27,12 @@ function getGreeting() {
 
 export default function DashboardPage() {
   const { profile } = useProfile();
+  const {
+    canViewRevenue,
+    canViewBusinessStats,
+    canViewClientInsights,
+    showPersonalizedDashboard,
+  } = useRoleAccess();
   const { 
     business, 
     getDashboardStats, 
@@ -38,7 +45,9 @@ export default function DashboardPage() {
   
   const stats = getDashboardStats();
   const upcomingBookings = getUpcomingBookings(5);
-  const displayName = profile?.business_name || business.name || 'there';
+  const displayName = showPersonalizedDashboard
+    ? (profile?.business_name || 'there')
+    : (profile?.business_name || business.name || 'there');
   
   return (
     <div className="p-4 md:p-8 max-w-7xl mx-auto">
@@ -52,33 +61,42 @@ export default function DashboardPage() {
           {getGreeting()}, {displayName}! ✨
         </h1>
         <p className="text-muted-foreground mt-1">
-          Here&apos;s what&apos;s happening at {business.name} today.
+          {showPersonalizedDashboard
+            ? "Here's your schedule and stats for today."
+            : `Here's what's happening at ${business.name} today.`}
         </p>
       </motion.div>
       
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className={cn(
+        'grid gap-4 mb-8',
+        canViewBusinessStats ? 'grid-cols-2 lg:grid-cols-4' : 'grid-cols-2'
+      )}>
         <StatCard
-          title="Today's Bookings"
+          title={showPersonalizedDashboard ? "My Bookings Today" : "Today's Bookings"}
           value={stats.todayBookings}
           subtitle="appointments"
           icon={Calendar}
           iconColor="text-gold"
         />
-        <StatCard
-          title="Today's Revenue"
-          value={`€${stats.todayRevenue}`}
-          subtitle="projected"
-          icon={Euro}
-          iconColor="text-sage"
-        />
-        <StatCard
-          title="This Week"
-          value={stats.weekBookings}
-          subtitle={`€${stats.weekRevenue} revenue`}
-          icon={TrendingUp}
-          iconColor="text-lavender"
-        />
+        {canViewRevenue && (
+          <StatCard
+            title={showPersonalizedDashboard ? "My Revenue Today" : "Today's Revenue"}
+            value={`€${stats.todayRevenue}`}
+            subtitle="projected"
+            icon={Euro}
+            iconColor="text-sage"
+          />
+        )}
+        {canViewBusinessStats && (
+          <StatCard
+            title="This Week"
+            value={stats.weekBookings}
+            subtitle={`€${stats.weekRevenue} revenue`}
+            icon={TrendingUp}
+            iconColor="text-lavender"
+          />
+        )}
         <StatCard
           title="Pending"
           value={stats.pendingBookings}
@@ -93,7 +111,10 @@ export default function DashboardPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}
-        className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8"
+        className={cn(
+          'grid gap-3 mb-8',
+          canViewBusinessStats ? 'grid-cols-2 md:grid-cols-4' : 'grid-cols-2 md:grid-cols-3'
+        )}
       >
         <Link href="/app/bookings/new">
           <Button className="w-full h-auto py-4 bg-gold hover:bg-gold-dark text-white flex flex-col gap-2">
@@ -110,15 +131,17 @@ export default function DashboardPage() {
         <Link href="/app/calendar">
           <Button variant="outline" className="w-full h-auto py-4 flex flex-col gap-2">
             <Calendar className="w-5 h-5" />
-            <span>View Calendar</span>
+            <span>{showPersonalizedDashboard ? 'My Schedule' : 'View Calendar'}</span>
           </Button>
         </Link>
-        <Link href="/app/services">
-          <Button variant="outline" className="w-full h-auto py-4 flex flex-col gap-2">
-            <Clock className="w-5 h-5" />
-            <span>Services</span>
-          </Button>
-        </Link>
+        {canViewBusinessStats && (
+          <Link href="/app/services">
+            <Button variant="outline" className="w-full h-auto py-4 flex flex-col gap-2">
+              <Clock className="w-5 h-5" />
+              <span>Services</span>
+            </Button>
+          </Link>
+        )}
       </motion.div>
       
       <div className="grid lg:grid-cols-3 gap-6 mb-8">
@@ -131,7 +154,9 @@ export default function DashboardPage() {
         >
           <Card className="shadow-soft">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-lg font-semibold">Upcoming Appointments</CardTitle>
+              <CardTitle className="text-lg font-semibold">
+                {showPersonalizedDashboard ? 'My Upcoming Appointments' : 'Upcoming Appointments'}
+              </CardTitle>
               <Link href="/app/bookings">
                 <Button variant="ghost" size="sm" className="text-gold">
                   View All
@@ -166,7 +191,9 @@ export default function DashboardPage() {
                 <EmptyState
                   icon={Calendar}
                   title="No upcoming appointments"
-                  description="Your schedule is clear. Time to book some clients!"
+                  description={showPersonalizedDashboard 
+                    ? "Your schedule is clear for now!" 
+                    : "Your schedule is clear. Time to book some clients!"}
                   action={{
                     label: 'New Booking',
                     onClick: () => {},
@@ -187,65 +214,75 @@ export default function DashboardPage() {
         </motion.div>
       </div>
       
-      {/* Client Insights & Activity */}
-      <div className="grid lg:grid-cols-3 gap-6">
-        {/* Client Insights */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="lg:col-span-2"
-        >
-          <div className="mb-4">
-            <h2 className="text-lg font-semibold text-warm-brown flex items-center gap-2">
-              <Heart className="w-5 h-5 text-dusty-rose" />
-              Client Insights
-            </h2>
-            <p className="text-sm text-muted-foreground">
-              Keep your clients engaged and coming back
-            </p>
-          </div>
-          <ClientInsights />
-        </motion.div>
-        
-        {/* Recent Activity */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-        >
-          <Card className="shadow-soft">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg font-semibold">Recent Activity</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {activities.slice(0, 5).map((activity) => (
-                  <div key={activity.id} className="flex items-start gap-3">
-                    <div className={`p-1.5 rounded-full ${
-                      activity.type === 'booking_created' ? 'bg-sage/20' :
-                      activity.type === 'booking_completed' ? 'bg-lavender/20' :
-                      activity.type === 'booking_cancelled' ? 'bg-dusty-rose/20' :
-                      'bg-gold/20'
-                    }`}>
-                      {activity.type === 'booking_created' && <Plus className="w-3 h-3 text-sage" />}
-                      {activity.type === 'booking_completed' && <CheckCircle className="w-3 h-3 text-lavender" />}
-                      {activity.type === 'booking_cancelled' && <AlertCircle className="w-3 h-3 text-dusty-rose" />}
-                      {activity.type === 'client_added' && <Users className="w-3 h-3 text-gold" />}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-warm-brown">{activity.message}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {format(new Date(activity.timestamp), 'MMM d, h:mm a')}
-                      </p>
-                    </div>
-                  </div>
-                ))}
+      {/* Client Insights & Activity — only for roles with access */}
+      {(canViewClientInsights || canViewBusinessStats) && (
+        <div className="grid lg:grid-cols-3 gap-6">
+          {/* Client Insights */}
+          {canViewClientInsights && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+              className="lg:col-span-2"
+            >
+              <div className="mb-4">
+                <h2 className="text-lg font-semibold text-warm-brown flex items-center gap-2">
+                  <Heart className="w-5 h-5 text-dusty-rose" />
+                  Client Insights
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  Keep your clients engaged and coming back
+                </p>
               </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-      </div>
+              <ClientInsights />
+            </motion.div>
+          )}
+          
+          {/* Recent Activity */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            className={!canViewClientInsights ? 'lg:col-span-3' : ''}
+          >
+            <Card className="shadow-soft">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg font-semibold">Recent Activity</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {activities.slice(0, 5).map((activity) => (
+                    <div key={activity.id} className="flex items-start gap-3">
+                      <div className={`p-1.5 rounded-full ${
+                        activity.type === 'booking_created' ? 'bg-sage/20' :
+                        activity.type === 'booking_completed' ? 'bg-lavender/20' :
+                        activity.type === 'booking_cancelled' ? 'bg-dusty-rose/20' :
+                        'bg-gold/20'
+                      }`}>
+                        {activity.type === 'booking_created' && <Plus className="w-3 h-3 text-sage" />}
+                        {activity.type === 'booking_completed' && <CheckCircle className="w-3 h-3 text-lavender" />}
+                        {activity.type === 'booking_cancelled' && <AlertCircle className="w-3 h-3 text-dusty-rose" />}
+                        {activity.type === 'client_added' && <Users className="w-3 h-3 text-gold" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-warm-brown">{activity.message}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {format(new Date(activity.timestamp), 'MMM d, h:mm a')}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
+}
+
+// Helper for conditional classnames (already in utils, but inline for clarity)
+function cn(...classes: (string | false | undefined)[]) {
+  return classes.filter(Boolean).join(' ');
 }
