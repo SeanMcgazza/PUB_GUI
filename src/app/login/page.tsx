@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
-import { Scissors, Mail, Lock, Loader2, ArrowRight } from 'lucide-react';
+import { Beer, Mail, Lock, Loader2, ArrowRight } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -53,12 +53,12 @@ export default function LoginPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2">
-            <div className="p-3 bg-gold rounded-2xl">
-              <Scissors className="w-7 h-7 text-white" />
+            <div className="p-3 bg-amber-600 rounded-2xl">
+              <Beer className="w-7 h-7 text-white" />
             </div>
           </Link>
           <h1 className="text-2xl font-bold text-warm-brown mt-4">Welcome back</h1>
-          <p className="text-muted-foreground mt-1">Sign in to manage your salon</p>
+          <p className="text-muted-foreground mt-1">Sign in to manage your pub</p>
         </div>
 
         <Card className="shadow-soft">
@@ -105,7 +105,7 @@ export default function LoginPage() {
               <Button
                 type="submit"
                 disabled={!isValid || loading}
-                className="w-full bg-gold hover:bg-gold-dark text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-amber-600 hover:bg-amber-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <>
@@ -125,7 +125,7 @@ export default function LoginPage() {
 
         <p className="text-center text-sm text-muted-foreground mt-6">
           Don&apos;t have an account?{' '}
-          <Link href="/signup" className="text-gold hover:text-gold-dark font-medium">
+          <Link href="/signup" className="text-amber-600 hover:text-amber-700 font-medium">
             Sign up free
           </Link>
         </p>

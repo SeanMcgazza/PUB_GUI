@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
-import { Scissors, Mail, Lock, User, Loader2, ArrowRight, Check, X } from 'lucide-react';
+import { Beer, Mail, Lock, User, Loader2, ArrowRight, Check, X } from 'lucide-react';
 
 export default function SignupPage() {
   const router = useRouter();
@@ -96,25 +96,25 @@ export default function SignupPage() {
         {/* Logo */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2">
-            <div className="p-3 bg-gold rounded-2xl">
-              <Scissors className="w-7 h-7 text-white" />
+            <div className="p-3 bg-amber-600 rounded-2xl">
+              <Beer className="w-7 h-7 text-white" />
             </div>
           </Link>
-          <h1 className="text-2xl font-bold text-warm-brown mt-4">Create your salon</h1>
-          <p className="text-muted-foreground mt-1">Start managing bookings in minutes</p>
+          <h1 className="text-2xl font-bold text-warm-brown mt-4">Create your pub</h1>
+          <p className="text-muted-foreground mt-1">Start taking orders in minutes</p>
         </div>
 
         <Card className="shadow-soft">
           <CardContent className="p-6">
             <form onSubmit={handleSignup} className="space-y-4">
               <div>
-                <Label htmlFor="businessName">Salon / Business Name</Label>
+                <Label htmlFor="businessName">Pub / Bar / Restaurant Name</Label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input
                     id="businessName"
                     type="text"
-                    placeholder="Sarah's Hair Studio"
+                    placeholder="The Local Pub"
                     value={businessName}
                     onChange={(e) => setBusinessName(e.target.value)}
                     className="pl-10"
@@ -199,7 +199,7 @@ export default function SignupPage() {
               <Button
                 type="submit"
                 disabled={!validation.isValid || loading}
-                className="w-full bg-gold hover:bg-gold-dark text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-amber-600 hover:bg-amber-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <>
@@ -219,7 +219,7 @@ export default function SignupPage() {
 
         <p className="text-center text-sm text-muted-foreground mt-6">
           Already have an account?{' '}
-          <Link href="/login" className="text-gold hover:text-gold-dark font-medium">
+          <Link href="/login" className="text-amber-600 hover:text-amber-700 font-medium">
             Sign in
           </Link>
         </p>
