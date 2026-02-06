@@ -9,400 +9,196 @@ export type Json =
 export interface Database {
   public: {
     Tables: {
-      blog_posts: {
+      pubs: {
         Row: {
           id: string;
-          author_id: string | null;
-          title: string;
+          owner_id: string | null;
+          name: string;
           slug: string;
-          excerpt: string;
-          content: string;
-          cover_image_url: string | null;
-          published: boolean;
-          published_at: string | null;
-          tags: string[];
-          meta_title: string | null;
-          meta_description: string | null;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          author_id?: string | null;
-          title: string;
-          slug: string;
-          excerpt?: string;
-          content?: string;
-          cover_image_url?: string | null;
-          published?: boolean;
-          published_at?: string | null;
-          tags?: string[];
-          meta_title?: string | null;
-          meta_description?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          author_id?: string | null;
-          title?: string;
-          slug?: string;
-          excerpt?: string;
-          content?: string;
-          cover_image_url?: string | null;
-          published?: boolean;
-          published_at?: string | null;
-          tags?: string[];
-          meta_title?: string | null;
-          meta_description?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-      };
-      profiles: {
-        Row: {
-          id: string;
-          business_name: string;
-          email: string;
-          phone: string | null;
           address: string | null;
-          city: string | null;
-          slug: string | null;
-          description: string | null;
-          currency: string;
-          timezone: string;
-          booking_notice: number;
-          cancellation_policy: string | null;
-          logo_url: string | null;
-          cover_image_url: string | null;
-          role: string;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id: string;
-          business_name?: string;
-          email?: string;
-          phone?: string | null;
-          address?: string | null;
-          city?: string | null;
-          slug?: string | null;
-          description?: string | null;
-          currency?: string;
-          timezone?: string;
-          booking_notice?: number;
-          cancellation_policy?: string | null;
-          logo_url?: string | null;
-          cover_image_url?: string | null;
-          role?: string;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          business_name?: string;
-          email?: string;
-          phone?: string | null;
-          address?: string | null;
-          city?: string | null;
-          slug?: string | null;
-          description?: string | null;
-          currency?: string;
-          timezone?: string;
-          booking_notice?: number;
-          cancellation_policy?: string | null;
-          logo_url?: string | null;
-          cover_image_url?: string | null;
-          role?: string;
-          created_at?: string;
-          updated_at?: string;
-        };
-      };
-      staff: {
-        Row: {
-          id: string;
-          business_id: string;
-          name: string;
-          email: string | null;
           phone: string | null;
-          role: string;
-          avatar: string | null;
-          bio: string | null;
-          is_active: boolean;
+          logo_url: string | null;
+          settings: Json;
           created_at: string;
           updated_at: string;
         };
         Insert: {
           id?: string;
-          business_id: string;
+          owner_id?: string | null;
           name: string;
-          email?: string | null;
+          slug: string;
+          address?: string | null;
           phone?: string | null;
-          role?: string;
-          avatar?: string | null;
-          bio?: string | null;
-          is_active?: boolean;
+          logo_url?: string | null;
+          settings?: Json;
           created_at?: string;
           updated_at?: string;
         };
         Update: {
           id?: string;
-          business_id?: string;
+          owner_id?: string | null;
           name?: string;
-          email?: string | null;
+          slug?: string;
+          address?: string | null;
           phone?: string | null;
-          role?: string;
-          avatar?: string | null;
-          bio?: string | null;
-          is_active?: boolean;
+          logo_url?: string | null;
+          settings?: Json;
           created_at?: string;
           updated_at?: string;
         };
       };
-      service_categories: {
+      tables: {
         Row: {
           id: string;
-          business_id: string;
+          pub_id: string;
+          number: number;
+          name: string | null;
+          qr_token: string;
+          status: 'available' | 'occupied' | 'reserved';
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          pub_id: string;
+          number: number;
+          name?: string | null;
+          qr_token: string;
+          status?: 'available' | 'occupied' | 'reserved';
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          pub_id?: string;
+          number?: number;
+          name?: string | null;
+          qr_token?: string;
+          status?: 'available' | 'occupied' | 'reserved';
+          created_at?: string;
+        };
+      };
+      menu_categories: {
+        Row: {
+          id: string;
+          pub_id: string;
           name: string;
-          description: string | null;
           order: number;
           created_at: string;
-          updated_at: string;
         };
         Insert: {
           id?: string;
-          business_id: string;
+          pub_id: string;
           name: string;
-          description?: string | null;
           order?: number;
           created_at?: string;
-          updated_at?: string;
         };
         Update: {
           id?: string;
-          business_id?: string;
+          pub_id?: string;
           name?: string;
-          description?: string | null;
           order?: number;
           created_at?: string;
-          updated_at?: string;
         };
       };
-      services: {
+      menu_items: {
         Row: {
           id: string;
-          business_id: string;
+          pub_id: string;
           category_id: string | null;
           name: string;
           description: string | null;
-          duration: number;
           price: number;
-          is_active: boolean;
-          color: string | null;
+          image_url: string | null;
+          is_available: boolean;
           created_at: string;
-          updated_at: string;
         };
         Insert: {
           id?: string;
-          business_id: string;
+          pub_id: string;
           category_id?: string | null;
           name: string;
           description?: string | null;
-          duration?: number;
-          price?: number;
-          is_active?: boolean;
-          color?: string | null;
+          price: number;
+          image_url?: string | null;
+          is_available?: boolean;
           created_at?: string;
-          updated_at?: string;
         };
         Update: {
           id?: string;
-          business_id?: string;
+          pub_id?: string;
           category_id?: string | null;
           name?: string;
           description?: string | null;
-          duration?: number;
           price?: number;
-          is_active?: boolean;
-          color?: string | null;
+          image_url?: string | null;
+          is_available?: boolean;
           created_at?: string;
-          updated_at?: string;
         };
       };
-      clients: {
+      orders: {
         Row: {
           id: string;
-          business_id: string;
-          first_name: string;
-          last_name: string;
-          email: string | null;
-          phone: string | null;
+          pub_id: string;
+          table_id: string | null;
+          session_token: string;
+          status: 'pending' | 'accepted' | 'preparing' | 'ready' | 'collected' | 'cancelled';
+          confirmation_code: string;
+          total: number;
           notes: string | null;
-          tags: string[];
-          loyalty_points: number;
-          total_visits: number;
-          total_spent: number;
-          last_visit: string | null;
-          preferred_staff_id: string | null;
-          no_show_count: number;
           created_at: string;
           updated_at: string;
         };
         Insert: {
           id?: string;
-          business_id: string;
-          first_name: string;
-          last_name: string;
-          email?: string | null;
-          phone?: string | null;
+          pub_id: string;
+          table_id?: string | null;
+          session_token: string;
+          status?: 'pending' | 'accepted' | 'preparing' | 'ready' | 'collected' | 'cancelled';
+          confirmation_code: string;
+          total?: number;
           notes?: string | null;
-          tags?: string[];
-          loyalty_points?: number;
-          total_visits?: number;
-          total_spent?: number;
-          last_visit?: string | null;
-          preferred_staff_id?: string | null;
-          no_show_count?: number;
           created_at?: string;
           updated_at?: string;
         };
         Update: {
           id?: string;
-          business_id?: string;
-          first_name?: string;
-          last_name?: string;
-          email?: string | null;
-          phone?: string | null;
+          pub_id?: string;
+          table_id?: string | null;
+          session_token?: string;
+          status?: 'pending' | 'accepted' | 'preparing' | 'ready' | 'collected' | 'cancelled';
+          confirmation_code?: string;
+          total?: number;
           notes?: string | null;
-          tags?: string[];
-          loyalty_points?: number;
-          total_visits?: number;
-          total_spent?: number;
-          last_visit?: string | null;
-          preferred_staff_id?: string | null;
-          no_show_count?: number;
           created_at?: string;
           updated_at?: string;
         };
       };
-      bookings: {
+      order_items: {
         Row: {
           id: string;
-          business_id: string;
-          client_id: string | null;
-          service_id: string | null;
-          staff_id: string | null;
-          date: string;
-          start_time: string;
-          end_time: string;
-          status: string;
+          order_id: string;
+          menu_item_id: string | null;
+          name: string;
           price: number;
+          quantity: number;
           notes: string | null;
-          reminder_sent: boolean;
-          created_at: string;
-          updated_at: string;
         };
         Insert: {
           id?: string;
-          business_id: string;
-          client_id?: string | null;
-          service_id?: string | null;
-          staff_id?: string | null;
-          date: string;
-          start_time: string;
-          end_time: string;
-          status?: string;
-          price?: number;
+          order_id: string;
+          menu_item_id?: string | null;
+          name: string;
+          price: number;
+          quantity?: number;
           notes?: string | null;
-          reminder_sent?: boolean;
-          created_at?: string;
-          updated_at?: string;
         };
         Update: {
           id?: string;
-          business_id?: string;
-          client_id?: string | null;
-          service_id?: string | null;
-          staff_id?: string | null;
-          date?: string;
-          start_time?: string;
-          end_time?: string;
-          status?: string;
+          order_id?: string;
+          menu_item_id?: string | null;
+          name?: string;
           price?: number;
+          quantity?: number;
           notes?: string | null;
-          reminder_sent?: boolean;
-          created_at?: string;
-          updated_at?: string;
-        };
-      };
-      booking_settings: {
-        Row: {
-          id: string;
-          business_id: string;
-          advance_booking_days: number;
-          slot_interval: number;
-          auto_confirm: boolean;
-          require_deposit: boolean;
-          deposit_amount: number;
-          cancellation_hours: number;
-          business_hours: Json;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          business_id: string;
-          advance_booking_days?: number;
-          slot_interval?: number;
-          auto_confirm?: boolean;
-          require_deposit?: boolean;
-          deposit_amount?: number;
-          cancellation_hours?: number;
-          business_hours?: Json;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          business_id?: string;
-          advance_booking_days?: number;
-          slot_interval?: number;
-          auto_confirm?: boolean;
-          require_deposit?: boolean;
-          deposit_amount?: number;
-          cancellation_hours?: number;
-          business_hours?: Json;
-          created_at?: string;
-          updated_at?: string;
-        };
-      };
-      activities: {
-        Row: {
-          id: string;
-          business_id: string;
-          type: string;
-          message: string;
-          metadata: Json;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          business_id: string;
-          type: string;
-          message?: string;
-          metadata?: Json;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          business_id?: string;
-          type?: string;
-          message?: string;
-          metadata?: Json;
-          created_at?: string;
-          updated_at?: string;
         };
       };
     };
@@ -411,3 +207,16 @@ export interface Database {
     Enums: Record<string, never>;
   };
 }
+
+// Convenience types
+export type Pub = Database['public']['Tables']['pubs']['Row'];
+export type Table = Database['public']['Tables']['tables']['Row'];
+export type MenuCategory = Database['public']['Tables']['menu_categories']['Row'];
+export type MenuItem = Database['public']['Tables']['menu_items']['Row'];
+export type Order = Database['public']['Tables']['orders']['Row'];
+export type OrderItem = Database['public']['Tables']['order_items']['Row'];
+
+export type OrderWithItems = Order & {
+  order_items: OrderItem[];
+  tables: Table | null;
+};

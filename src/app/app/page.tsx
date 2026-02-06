@@ -1,284 +1,357 @@
 'use client';
 
-import { useStore } from '@/store';
-import { useProfile } from '@/hooks/useProfile';
-import { useRoleAccess } from '@/hooks/useRoleAccess';
-import { cn } from '@/lib/utils';
-import { StatCard } from '@/components/ui/stat-card';
-import { BookingCard } from '@/components/cards/booking-card';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { createClient } from '@/lib/supabase/client';
+import { usePub } from '@/hooks/usePub';
 import { Button } from '@/components/ui/button';
-import { EmptyState } from '@/components/ui/empty-state';
-import { ClientInsights } from '@/components/client-insights';
-import { BookingQRCode } from '@/components/booking-qr-code';
-import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
+import type { Order, OrderItem, Table } from '@/types/database';
+import { formatDistanceToNow } from 'date-fns';
 import { 
-  Calendar, Euro, Users, Clock, Plus, ArrowRight,
-  TrendingUp, AlertCircle, CheckCircle, Heart
+  Clock, Check, ChefHat, Bell, Package, X, 
+  Volume2, VolumeX, RefreshCw
 } from 'lucide-react';
-import Link from 'next/link';
-import { format } from 'date-fns';
 
-function getGreeting() {
-  const hour = new Date().getHours();
-  if (hour < 12) return 'Good morning';
-  if (hour < 17) return 'Good afternoon';
-  return 'Good evening';
-}
+type OrderWithDetails = Order & {
+  order_items: OrderItem[];
+  tables: Table | null;
+};
+
+const statusFilters = [
+  { key: 'pending', label: 'Pending', icon: Clock, color: 'bg-amber-500' },
+  { key: 'accepted', label: 'Accepted', icon: Check, color: 'bg-blue-500' },
+  { key: 'preparing', label: 'Preparing', icon: ChefHat, color: 'bg-purple-500' },
+  { key: 'ready', label: 'Ready', icon: Bell, color: 'bg-green-500' },
+] as const;
 
 export default function DashboardPage() {
-  const { profile } = useProfile();
-  const {
-    canViewRevenue,
-    canViewBusinessStats,
-    canViewClientInsights,
-    showPersonalizedDashboard,
-  } = useRoleAccess();
-  const { 
-    business, 
-    getDashboardStats, 
-    getUpcomingBookings, 
-    getClientById, 
-    getServiceById,
-    updateBookingStatus,
-    activities
-  } = useStore();
-  
-  const stats = getDashboardStats();
-  const upcomingBookings = getUpcomingBookings(5);
-  const displayName = showPersonalizedDashboard
-    ? (profile?.business_name || 'there')
-    : (profile?.business_name || business.name || 'there');
-  
+  const { pub } = usePub();
+  const [orders, setOrders] = useState<OrderWithDetails[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeFilter, setActiveFilter] = useState<string | null>('pending');
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const supabase = createClient() as any;
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const fetchOrders = useCallback(async () => {
+    if (!pub) return;
+
+    const { data, error } = await supabase
+      .from('orders')
+      .select(`
+        *,
+        order_items (*),
+        tables (*)
+      `)
+      .eq('pub_id', pub.id)
+      .in('status', ['pending', 'accepted', 'preparing', 'ready'])
+      .order('created_at', { ascending: false });
+
+    if (!error && data) {
+      setOrders(data as OrderWithDetails[]);
+    }
+    setLoading(false);
+  }, [pub, supabase]);
+
+  // Initial fetch
+  useEffect(() => {
+    fetchOrders();
+  }, [fetchOrders]);
+
+  // Real-time subscription
+  useEffect(() => {
+    if (!pub) return;
+
+    const channel = supabase
+      .channel('orders-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'orders',
+          filter: `pub_id=eq.${pub.id}`,
+        },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (payload: any) => {
+          if (payload.eventType === 'INSERT') {
+            // Play notification sound
+            if (soundEnabled && audioRef.current) {
+              audioRef.current.play().catch(() => {});
+            }
+            fetchOrders();
+          } else if (payload.eventType === 'UPDATE') {
+            setOrders((prev) =>
+              prev.map((order) =>
+                order.id === payload.new.id
+                  ? { ...order, ...(payload.new as Order) }
+                  : order
+              )
+            );
+          } else if (payload.eventType === 'DELETE') {
+            setOrders((prev) =>
+              prev.filter((order) => order.id !== payload.old.id)
+            );
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [pub, supabase, soundEnabled, fetchOrders]);
+
+  const updateOrderStatus = async (orderId: string, newStatus: string) => {
+    const { error } = await supabase
+      .from('orders')
+      .update({ status: newStatus, updated_at: new Date().toISOString() })
+      .eq('id', orderId);
+
+    if (error) {
+      console.error('Failed to update order:', error);
+      alert('Failed to update order status');
+    }
+  };
+
+  const filteredOrders = activeFilter
+    ? orders.filter((o) => o.status === activeFilter)
+    : orders;
+
+  const statusCounts = statusFilters.reduce((acc, s) => {
+    acc[s.key] = orders.filter((o) => o.status === s.key).length;
+    return acc;
+  }, {} as Record<string, number>);
+
   return (
-    <div className="p-4 md:p-8 max-w-7xl mx-auto">
+    <div className="p-4 md:p-8 max-w-6xl mx-auto">
+      {/* Hidden audio element for notification sound */}
+      <audio ref={audioRef} preload="auto">
+        <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2teleiyC2NugqHpPJCR2y+3d0J6Abzg1RILo7+PWrH89HRxLrt7u7tGykWk+JitZju719urLnGs2GxdNqNr2+O3TtpNlNRsWRaHS8/zz4dCvjmIxFg84ldLu/f7+9ubEoXQ8GA0ticrq////++/RsYZHIQ8gisDm////++/Ts4lJIg8gisDm////////x55xRB0MHYvF6v////////vgwZ1wRh8OH4zJ7f///////fHVrYpNKRUQgMTx////////8+vdroxOKhURgMXz////////9e7hrY1RLBgRfcP1/////////PPhsZBSLhoSfMP2/////////fflupVVMB0TesL4//////////vrvphXMh8VeL/5//////////3zwZ1bNSEWdb35//////////70xaFdNyQXc7z7///////////3yKRgOSYYcbr8////////////+symYjwpGm+5/f////////////7/z61mQCwbbrj+/////////////9GwakIuHGy3/////////////////9SzbEQuHWy3/////////////////9azcEYwH2u2/////////////////9i1ckgxIGq1//////////////////+4dEoyIWm0//////////////////+5d0wzImiz//////////////////+6ek40I2ey//////////////////+8fVA2JGax//////////////////++gFE3JWWw//////////////////+/g1M4J2Sv///////////////////AhVU6KGOu///////////////////BiFc7KWKt///////////////////CilpWWVpa" type="audio/wav" />
+      </audio>
+
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="mb-8"
+        className="mb-6 flex items-center justify-between"
       >
-        <h1 className="text-2xl md:text-3xl font-bold text-warm-brown">
-          {getGreeting()}, {displayName}! ✨
-        </h1>
-        <p className="text-muted-foreground mt-1">
-          {showPersonalizedDashboard
-            ? "Here's your schedule and stats for today."
-            : `Here's what's happening at ${business.name} today.`}
-        </p>
-      </motion.div>
-      
-      {/* Stats Grid */}
-      <div className={cn(
-        'grid gap-4 mb-8',
-        canViewBusinessStats ? 'grid-cols-2 lg:grid-cols-4' : 'grid-cols-2'
-      )}>
-        <StatCard
-          title={showPersonalizedDashboard ? "My Bookings Today" : "Today's Bookings"}
-          value={stats.todayBookings}
-          subtitle="appointments"
-          icon={Calendar}
-          iconColor="text-gold"
-        />
-        {canViewRevenue && (
-          <StatCard
-            title={showPersonalizedDashboard ? "My Revenue Today" : "Today's Revenue"}
-            value={`€${stats.todayRevenue}`}
-            subtitle="projected"
-            icon={Euro}
-            iconColor="text-sage"
-          />
-        )}
-        {canViewBusinessStats && (
-          <StatCard
-            title="This Week"
-            value={stats.weekBookings}
-            subtitle={`€${stats.weekRevenue} revenue`}
-            icon={TrendingUp}
-            iconColor="text-lavender"
-          />
-        )}
-        <StatCard
-          title="Pending"
-          value={stats.pendingBookings}
-          subtitle="to confirm"
-          icon={AlertCircle}
-          iconColor="text-soft-gold"
-        />
-      </div>
-      
-      {/* Quick Actions */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className={cn(
-          'grid gap-3 mb-8',
-          canViewBusinessStats ? 'grid-cols-2 md:grid-cols-4' : 'grid-cols-2 md:grid-cols-3'
-        )}
-      >
-        <Link href="/app/bookings/new">
-          <Button className="w-full h-auto py-4 bg-gold hover:bg-gold-dark text-white flex flex-col gap-2">
-            <Plus className="w-5 h-5" />
-            <span>New Booking</span>
-          </Button>
-        </Link>
-        <Link href="/app/clients/new">
-          <Button variant="outline" className="w-full h-auto py-4 flex flex-col gap-2">
-            <Users className="w-5 h-5" />
-            <span>Add Client</span>
-          </Button>
-        </Link>
-        <Link href="/app/calendar">
-          <Button variant="outline" className="w-full h-auto py-4 flex flex-col gap-2">
-            <Calendar className="w-5 h-5" />
-            <span>{showPersonalizedDashboard ? 'My Schedule' : 'View Calendar'}</span>
-          </Button>
-        </Link>
-        {canViewBusinessStats && (
-          <Link href="/app/services">
-            <Button variant="outline" className="w-full h-auto py-4 flex flex-col gap-2">
-              <Clock className="w-5 h-5" />
-              <span>Services</span>
-            </Button>
-          </Link>
-        )}
-      </motion.div>
-      
-      <div className="grid lg:grid-cols-3 gap-6 mb-8">
-        {/* Upcoming Appointments */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="lg:col-span-2"
-        >
-          <Card className="shadow-soft">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-lg font-semibold">
-                {showPersonalizedDashboard ? 'My Upcoming Appointments' : 'Upcoming Appointments'}
-              </CardTitle>
-              <Link href="/app/bookings">
-                <Button variant="ghost" size="sm" className="text-gold">
-                  View All
-                  <ArrowRight className="w-4 h-4 ml-1" />
-                </Button>
-              </Link>
-            </CardHeader>
-            <CardContent>
-              {upcomingBookings.length > 0 ? (
-                <div className="space-y-3">
-                  {upcomingBookings.map((booking) => {
-                    const client = getClientById(booking.clientId);
-                    const service = getServiceById(booking.serviceId);
-                    if (!client || !service) return null;
-                    
-                    return (
-                      <BookingCard
-                        key={booking.id}
-                        booking={booking}
-                        client={client}
-                        service={service}
-                        showDate
-                        onConfirm={(b) => updateBookingStatus(b.id, 'confirmed')}
-                        onCancel={(b) => updateBookingStatus(b.id, 'cancelled')}
-                        onComplete={(b) => updateBookingStatus(b.id, 'completed')}
-                        onNoShow={(b) => updateBookingStatus(b.id, 'no-show')}
-                      />
-                    );
-                  })}
-                </div>
-              ) : (
-                <EmptyState
-                  icon={Calendar}
-                  title="No upcoming appointments"
-                  description={showPersonalizedDashboard 
-                    ? "Your schedule is clear for now!" 
-                    : "Your schedule is clear. Time to book some clients!"}
-                  action={{
-                    label: 'New Booking',
-                    onClick: () => {},
-                  }}
-                />
-              )}
-            </CardContent>
-          </Card>
-        </motion.div>
-        
-        {/* Booking QR Code */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-        >
-          <BookingQRCode />
-        </motion.div>
-      </div>
-      
-      {/* Client Insights & Activity — only for roles with access */}
-      {(canViewClientInsights || canViewBusinessStats) && (
-        <div className="grid lg:grid-cols-3 gap-6">
-          {/* Client Insights */}
-          {canViewClientInsights && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-              className="lg:col-span-2"
-            >
-              <div className="mb-4">
-                <h2 className="text-lg font-semibold text-warm-brown flex items-center gap-2">
-                  <Heart className="w-5 h-5 text-dusty-rose" />
-                  Client Insights
-                </h2>
-                <p className="text-sm text-muted-foreground">
-                  Keep your clients engaged and coming back
-                </p>
-              </div>
-              <ClientInsights />
-            </motion.div>
-          )}
-          
-          {/* Recent Activity */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-            className={!canViewClientInsights ? 'lg:col-span-3' : ''}
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold text-warm-brown">Orders</h1>
+          <p className="text-muted-foreground">
+            {orders.length} active order{orders.length !== 1 ? 's' : ''}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setSoundEnabled(!soundEnabled)}
+            className={cn(
+              soundEnabled ? 'text-amber-600' : 'text-muted-foreground'
+            )}
           >
-            <Card className="shadow-soft">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg font-semibold">Recent Activity</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {activities.slice(0, 5).map((activity) => (
-                    <div key={activity.id} className="flex items-start gap-3">
-                      <div className={`p-1.5 rounded-full ${
-                        activity.type === 'booking_created' ? 'bg-sage/20' :
-                        activity.type === 'booking_completed' ? 'bg-lavender/20' :
-                        activity.type === 'booking_cancelled' ? 'bg-dusty-rose/20' :
-                        'bg-gold/20'
-                      }`}>
-                        {activity.type === 'booking_created' && <Plus className="w-3 h-3 text-sage" />}
-                        {activity.type === 'booking_completed' && <CheckCircle className="w-3 h-3 text-lavender" />}
-                        {activity.type === 'booking_cancelled' && <AlertCircle className="w-3 h-3 text-dusty-rose" />}
-                        {activity.type === 'client_added' && <Users className="w-3 h-3 text-gold" />}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm text-warm-brown">{activity.message}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {format(new Date(activity.timestamp), 'MMM d, h:mm a')}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
+            {soundEnabled ? (
+              <Volume2 className="w-5 h-5" />
+            ) : (
+              <VolumeX className="w-5 h-5" />
+            )}
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={fetchOrders}
+          >
+            <RefreshCw className="w-4 h-4" />
+          </Button>
+        </div>
+      </motion.div>
+
+      {/* Status Filters */}
+      <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
+        <Button
+          variant={activeFilter === null ? 'default' : 'outline'}
+          onClick={() => setActiveFilter(null)}
+          className={cn(
+            activeFilter === null && 'bg-amber-600 hover:bg-amber-700'
+          )}
+        >
+          All ({orders.length})
+        </Button>
+        {statusFilters.map((filter) => {
+          const count = statusCounts[filter.key];
+          return (
+            <Button
+              key={filter.key}
+              variant={activeFilter === filter.key ? 'default' : 'outline'}
+              onClick={() => setActiveFilter(filter.key)}
+              className={cn(
+                'flex items-center gap-2',
+                activeFilter === filter.key && filter.color
+              )}
+            >
+              <filter.icon className="w-4 h-4" />
+              {filter.label}
+              {count > 0 && (
+                <span className="ml-1 bg-white/20 px-1.5 py-0.5 rounded text-xs">
+                  {count}
+                </span>
+              )}
+            </Button>
+          );
+        })}
+      </div>
+
+      {/* Orders Grid */}
+      {loading ? (
+        <div className="text-center py-12 text-muted-foreground">
+          Loading orders...
+        </div>
+      ) : filteredOrders.length === 0 ? (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="text-center py-12"
+        >
+          <Package className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-warm-brown mb-2">
+            No orders yet
+          </h3>
+          <p className="text-muted-foreground">
+            {activeFilter
+              ? `No ${activeFilter} orders at the moment`
+              : 'Orders will appear here when customers place them'}
+          </p>
+        </motion.div>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <AnimatePresence>
+            {filteredOrders.map((order) => (
+              <OrderCard
+                key={order.id}
+                order={order}
+                onUpdateStatus={updateOrderStatus}
+              />
+            ))}
+          </AnimatePresence>
         </div>
       )}
     </div>
+  );
+}
+
+function OrderCard({
+  order,
+  onUpdateStatus,
+}: {
+  order: OrderWithDetails;
+  onUpdateStatus: (orderId: string, status: string) => void;
+}) {
+  const statusConfig = {
+    pending: { bg: 'bg-amber-50 border-amber-200', badge: 'bg-amber-500', next: 'accepted', nextLabel: 'Accept' },
+    accepted: { bg: 'bg-blue-50 border-blue-200', badge: 'bg-blue-500', next: 'preparing', nextLabel: 'Start Preparing' },
+    preparing: { bg: 'bg-purple-50 border-purple-200', badge: 'bg-purple-500', next: 'ready', nextLabel: 'Mark Ready' },
+    ready: { bg: 'bg-green-50 border-green-200', badge: 'bg-green-500', next: 'collected', nextLabel: 'Collected' },
+  } as const;
+
+  const config = statusConfig[order.status as keyof typeof statusConfig];
+  const timeAgo = formatDistanceToNow(new Date(order.created_at), { addSuffix: true });
+
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      className={cn(
+        'rounded-xl border-2 p-4 shadow-sm',
+        config?.bg || 'bg-white border-gray-200'
+      )}
+    >
+      {/* Header */}
+      <div className="flex items-start justify-between mb-3">
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="text-2xl font-bold text-warm-brown">
+              #{order.confirmation_code}
+            </span>
+            <span className={cn(
+              'px-2 py-0.5 rounded-full text-xs text-white font-medium',
+              config?.badge || 'bg-gray-500'
+            )}>
+              {order.status}
+            </span>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Table {order.tables?.number || '?'}
+            {order.tables?.name && ` - ${order.tables.name}`}
+          </p>
+        </div>
+        <span className="text-xs text-muted-foreground">{timeAgo}</span>
+      </div>
+
+      {/* Items */}
+      <div className="space-y-1 mb-4">
+        {order.order_items.map((item) => (
+          <div key={item.id} className="flex justify-between text-sm">
+            <span>
+              {item.quantity}× {item.name}
+            </span>
+            <span className="text-muted-foreground">
+              £{(item.price * item.quantity).toFixed(2)}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      {/* Notes */}
+      {order.notes && (
+        <div className="bg-white/50 rounded-lg p-2 mb-4 text-sm">
+          <span className="text-muted-foreground">Notes: </span>
+          {order.notes}
+        </div>
+      )}
+
+      {/* Total */}
+      <div className="flex justify-between items-center pt-3 border-t border-white/50 mb-4">
+        <span className="font-medium">Total</span>
+        <span className="text-xl font-bold text-warm-brown">
+          £{order.total.toFixed(2)}
+        </span>
+      </div>
+
+      {/* Actions */}
+      <div className="flex gap-2">
+        {config?.next && config.next !== 'collected' && (
+          <Button
+            onClick={() => onUpdateStatus(order.id, config.next)}
+            className="flex-1 bg-amber-600 hover:bg-amber-700 text-white"
+          >
+            {config.nextLabel}
+          </Button>
+        )}
+        {config?.next === 'collected' && (
+          <Button
+            onClick={() => onUpdateStatus(order.id, 'collected')}
+            className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+          >
+            <Check className="w-4 h-4 mr-2" />
+            {config.nextLabel}
+          </Button>
+        )}
+        {order.status !== 'cancelled' && (
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => onUpdateStatus(order.id, 'cancelled')}
+            className="text-red-500 hover:text-red-600 hover:bg-red-50"
+          >
+            <X className="w-4 h-4" />
+          </Button>
+        )}
+      </div>
+    </motion.div>
   );
 }

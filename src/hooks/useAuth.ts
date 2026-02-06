@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
-import { createClient } from '@/lib/supabase/client';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
 import type { User } from '@supabase/supabase-js';
 
 export function useAuth() {
@@ -12,43 +12,27 @@ export function useAuth() {
   const supabase = createClient();
 
   useEffect(() => {
-    // Get initial user
     const getUser = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        setUser(user);
-      } catch {
-        setUser(null);
-      } finally {
-        setLoading(false);
-      }
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user);
+      setLoading(false);
     };
 
     getUser();
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setUser(session?.user ?? null);
-        setLoading(false);
-      }
-    );
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
 
     return () => {
       subscription.unsubscribe();
     };
-  }, [supabase]);
+  }, [supabase.auth]);
 
-  const signOut = useCallback(async () => {
+  const signOut = async () => {
     await supabase.auth.signOut();
     router.push('/login');
-    router.refresh();
-  }, [supabase, router]);
-
-  return {
-    user,
-    loading,
-    signOut,
-    isAuthenticated: !!user,
   };
+
+  return { user, loading, signOut };
 }

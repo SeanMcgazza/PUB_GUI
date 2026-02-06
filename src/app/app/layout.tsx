@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { AppShell } from '@/components/layout/app-shell';
-import { BookingNotifier } from '@/components/booking-notifier';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,21 +18,17 @@ export default async function AppLayout({
     redirect('/login');
   }
 
-  // Check if onboarding is complete (slug is set during onboarding)
-  const { data: profile } = await supabase
-    .from('profiles')
+  // Check if onboarding is complete (pub slug is set during onboarding)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: pub } = await (supabase as any)
+    .from('pubs')
     .select('slug')
-    .eq('id', user.id)
+    .eq('owner_id', user.id)
     .single() as { data: { slug: string | null } | null };
 
-  if (!profile?.slug) {
+  if (!pub?.slug) {
     redirect('/onboarding');
   }
 
-  return (
-    <>
-      <AppShell>{children}</AppShell>
-      <BookingNotifier />
-    </>
-  );
+  return <AppShell>{children}</AppShell>;
 }
