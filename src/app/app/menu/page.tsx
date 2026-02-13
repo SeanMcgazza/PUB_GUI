@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createClient } from '@/lib/supabase/client';
 import { usePub } from '@/hooks/usePub';
+import { DEMO_CATEGORIES, DEMO_MENU_ITEMS, isDemoMode } from '@/lib/demo-data';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -31,12 +32,20 @@ export default function MenuPage() {
   const [showCategoryDialog, setShowCategoryDialog] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   const [editingCategory, setEditingCategory] = useState<MenuCategory | null>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as any;
 
   const fetchData = useCallback(async () => {
     if (!pub) return;
 
+    // Demo mode - use mock data
+    if (isDemoMode()) {
+      setCategories(DEMO_CATEGORIES as unknown as MenuCategory[]);
+      setItems(DEMO_MENU_ITEMS as unknown as MenuItem[]);
+      setLoading(false);
+      return;
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const supabase = createClient() as any;
     const [categoriesRes, itemsRes] = await Promise.all([
       supabase
         .from('menu_categories')
@@ -53,13 +62,25 @@ export default function MenuPage() {
     if (categoriesRes.data) setCategories(categoriesRes.data as MenuCategory[]);
     if (itemsRes.data) setItems(itemsRes.data as MenuItem[]);
     setLoading(false);
-  }, [pub, supabase]);
+  }, [pub]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
   const toggleAvailability = async (item: MenuItem) => {
+    // Demo mode - update local state only
+    if (isDemoMode()) {
+      setItems((prev) =>
+        prev.map((i) =>
+          i.id === item.id ? { ...i, is_available: !i.is_available } : i
+        )
+      );
+      return;
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const supabase = createClient() as any;
     const { error } = await supabase
       .from('menu_items')
       .update({ is_available: !item.is_available })
@@ -77,6 +98,14 @@ export default function MenuPage() {
   const deleteItem = async (itemId: string) => {
     if (!confirm('Delete this menu item?')) return;
 
+    // Demo mode - update local state only
+    if (isDemoMode()) {
+      setItems((prev) => prev.filter((i) => i.id !== itemId));
+      return;
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const supabase = createClient() as any;
     const { error } = await supabase
       .from('menu_items')
       .delete()
@@ -90,6 +119,14 @@ export default function MenuPage() {
   const deleteCategory = async (categoryId: string) => {
     if (!confirm('Delete this category? Items will become uncategorized.')) return;
 
+    // Demo mode - update local state only
+    if (isDemoMode()) {
+      setCategories((prev) => prev.filter((c) => c.id !== categoryId));
+      return;
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const supabase = createClient() as any;
     const { error } = await supabase
       .from('menu_categories')
       .delete()

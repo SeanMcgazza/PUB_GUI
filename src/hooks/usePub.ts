@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { DEMO_PUB, isDemoMode } from '@/lib/demo-data';
 import type { Pub } from '@/types/database';
 
 export function usePub() {
@@ -11,6 +12,13 @@ export function usePub() {
 
   useEffect(() => {
     const fetchPub = async () => {
+      // Demo mode - use mock data
+      if (isDemoMode()) {
+        setPub(DEMO_PUB as Pub);
+        setLoading(false);
+        return;
+      }
+
       try {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const supabase = createClient() as any;

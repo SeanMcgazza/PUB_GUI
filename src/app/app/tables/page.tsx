@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { createClient } from '@/lib/supabase/client';
 import { usePub } from '@/hooks/usePub';
+import { DEMO_TABLES, isDemoMode } from '@/lib/demo-data';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -30,12 +31,19 @@ export default function TablesPage() {
   const [showQrDialog, setShowQrDialog] = useState(false);
   const [editingTable, setEditingTable] = useState<Table | null>(null);
   const [selectedTable, setSelectedTable] = useState<Table | null>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as any;
 
   const fetchTables = useCallback(async () => {
     if (!pub) return;
 
+    // Demo mode - use mock data
+    if (isDemoMode()) {
+      setTables(DEMO_TABLES as unknown as Table[]);
+      setLoading(false);
+      return;
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const supabase = createClient() as any;
     const { data, error } = await supabase
       .from('tables')
       .select('*')
@@ -46,7 +54,7 @@ export default function TablesPage() {
       setTables(data);
     }
     setLoading(false);
-  }, [pub, supabase]);
+  }, [pub]);
 
   useEffect(() => {
     fetchTables();
@@ -55,6 +63,14 @@ export default function TablesPage() {
   const deleteTable = async (tableId: string) => {
     if (!confirm('Delete this table? This cannot be undone.')) return;
 
+    // Demo mode - update local state only
+    if (isDemoMode()) {
+      setTables((prev) => prev.filter((t) => t.id !== tableId));
+      return;
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const supabase = createClient() as any;
     const { error } = await supabase
       .from('tables')
       .delete()

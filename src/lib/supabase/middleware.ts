@@ -2,15 +2,21 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
 export async function updateSession(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({
+  const supabaseResponse = NextResponse.next({
     request,
   });
 
+  // DEMO MODE: Always allow all routes - no auth checks
+  // When ready for production, remove this block
+  return supabaseResponse;
+
+  /* Production auth code - uncomment when Supabase is configured
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  // If env vars are missing, skip auth check and let the request through
-  if (!url || !key) {
+  // Demo mode - if env vars are missing or placeholders, skip auth check
+  const isDemoMode = !url || !key || url.includes('placeholder');
+  if (isDemoMode) {
     return supabaseResponse;
   }
 
@@ -50,7 +56,8 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname === '/login' ||
     request.nextUrl.pathname === '/signup' ||
     request.nextUrl.pathname.startsWith('/auth/') ||
-    request.nextUrl.pathname.startsWith('/book/');
+    request.nextUrl.pathname.startsWith('/book/') ||
+    request.nextUrl.pathname.startsWith('/order/');
 
   // If user is not authenticated and trying to access protected route
   if (
@@ -71,4 +78,5 @@ export async function updateSession(request: NextRequest) {
   }
 
   return supabaseResponse;
+  */
 }

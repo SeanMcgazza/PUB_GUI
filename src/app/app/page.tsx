@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createClient } from '@/lib/supabase/client';
 import { usePub } from '@/hooks/usePub';
+import { DEMO_ORDERS, isDemoMode } from '@/lib/demo-data';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { Order, OrderItem, Table } from '@/types/database';
@@ -31,13 +32,20 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState<string | null>('pending');
   const [soundEnabled, setSoundEnabled] = useState(true);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as any;
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   const fetchOrders = useCallback(async () => {
     if (!pub) return;
 
+    // Demo mode - use mock data
+    if (isDemoMode()) {
+      setOrders(DEMO_ORDERS as unknown as OrderWithDetails[]);
+      setLoading(false);
+      return;
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const supabase = createClient() as any;
     const { data, error } = await supabase
       .from('orders')
       .select(`
@@ -53,17 +61,19 @@ export default function DashboardPage() {
       setOrders(data as OrderWithDetails[]);
     }
     setLoading(false);
-  }, [pub, supabase]);
+  }, [pub]);
 
   // Initial fetch
   useEffect(() => {
     fetchOrders();
   }, [fetchOrders]);
 
-  // Real-time subscription
+  // Real-time subscription (skip in demo mode)
   useEffect(() => {
-    if (!pub) return;
+    if (!pub || isDemoMode()) return;
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const supabase = createClient() as any;
     const channel = supabase
       .channel('orders-realtime')
       .on(
@@ -102,9 +112,27 @@ export default function DashboardPage() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [pub, supabase, soundEnabled, fetchOrders]);
+  }, [pub, soundEnabled, fetchOrders]);
 
   const updateOrderStatus = async (orderId: string, newStatus: string) => {
+    // Demo mode - update local state only
+    if (isDemoMode()) {
+      setOrders((prev) =>
+        prev.map((order) =>
+          order.id === orderId
+            ? { ...order, status: newStatus as Order['status'] }
+            : order
+        ).filter((order) => 
+          newStatus === 'collected' || newStatus === 'cancelled' 
+            ? order.id !== orderId 
+            : true
+        )
+      );
+      return;
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const supabase = createClient() as any;
     const { error } = await supabase
       .from('orders')
       .update({ status: newStatus, updated_at: new Date().toISOString() })

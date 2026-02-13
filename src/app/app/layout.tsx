@@ -4,11 +4,22 @@ import { AppShell } from '@/components/layout/app-shell';
 
 export const dynamic = 'force-dynamic';
 
+// Check if demo mode (server-side)
+function isDemoMode() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  return !url || url.includes('placeholder');
+}
+
 export default async function AppLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  // Demo mode - skip auth checks
+  if (isDemoMode()) {
+    return <AppShell>{children}</AppShell>;
+  }
+
   const supabase = await createClient();
   const {
     data: { user },

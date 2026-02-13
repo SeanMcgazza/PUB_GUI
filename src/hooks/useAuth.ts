@@ -3,15 +3,33 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { isDemoMode } from '@/lib/demo-data';
 import type { User } from '@supabase/supabase-js';
+
+const DEMO_USER = {
+  id: 'demo-owner-id',
+  email: 'demo@bartab.app',
+  user_metadata: { business_name: 'The Local' },
+  app_metadata: {},
+  aud: 'authenticated',
+  created_at: new Date().toISOString(),
+} as unknown as User;
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
-  const supabase = createClient();
 
   useEffect(() => {
+    // Demo mode - use fake user
+    if (isDemoMode()) {
+      setUser(DEMO_USER);
+      setLoading(false);
+      return;
+    }
+
+    const supabase = createClient();
+
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
@@ -27,10 +45,13 @@ export function useAuth() {
     return () => {
       subscription.unsubscribe();
     };
-  }, [supabase.auth]);
+  }, []);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    if (!isDemoMode()) {
+      const supabase = createClient();
+      await supabase.auth.signOut();
+    }
     router.push('/login');
   };
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -8,7 +8,8 @@ import { cn } from '@/lib/utils';
 import type { Pub, Table, MenuCategory, MenuItem, Order } from '@/types/database';
 import { 
   Beer, ShoppingCart, Plus, Minus, X, Check, 
-  Clock, ChefHat, Bell, Loader2
+  Clock, ChefHat, Bell, Loader2, Sparkles,
+  Wine, Coffee, UtensilsCrossed, GlassWater
 } from 'lucide-react';
 
 interface CartItem {
@@ -25,14 +26,43 @@ interface Props {
   sessionToken: string;
 }
 
+// Category icons mapping
+const categoryIcons: Record<string, React.ComponentType<{ className?: string }>> = {
+  'draught beer': Beer,
+  'bottled beer': Beer,
+  'beer': Beer,
+  'wine': Wine,
+  'spirits': GlassWater,
+  'cocktails': GlassWater,
+  'soft drinks': Coffee,
+  'food': UtensilsCrossed,
+};
+
+function getCategoryIcon(name: string) {
+  const key = name.toLowerCase();
+  for (const [pattern, Icon] of Object.entries(categoryIcons)) {
+    if (key.includes(pattern)) return Icon;
+  }
+  return Beer;
+}
+
 export function OrderingClient({ pub, table, categories, menuItems, sessionToken }: Props) {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [showCart, setShowCart] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [activeOrder, setActiveOrder] = useState<Order | null>(null);
   const [orderNotes, setOrderNotes] = useState('');
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const categoryRefs = useRef<Record<string, HTMLDivElement | null>>({});
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const supabase = createClient() as any;
+
+  // Set initial active category
+  useEffect(() => {
+    if (categories.length > 0 && !activeCategory) {
+      setActiveCategory(categories[0].id);
+    }
+  }, [categories, activeCategory]);
 
   // Set session cookie
   useEffect(() => {
@@ -86,6 +116,11 @@ export function OrderingClient({ pub, table, categories, menuItems, sessionToken
     };
   }, [activeOrder, supabase]);
 
+  const scrollToCategory = (categoryId: string) => {
+    setActiveCategory(categoryId);
+    categoryRefs.current[categoryId]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   const addToCart = (item: MenuItem) => {
     setCart((prev) => {
       const existing = prev.find((c) => c.menuItem.id === item.id);
@@ -126,10 +161,8 @@ export function OrderingClient({ pub, table, categories, menuItems, sessionToken
     
     setSubmitting(true);
     try {
-      // Generate 4-digit confirmation code
       const confirmationCode = String(Math.floor(1000 + Math.random() * 9000));
 
-      // Create order
       const { data: order, error: orderError } = await supabase
         .from('orders')
         .insert({
@@ -145,7 +178,6 @@ export function OrderingClient({ pub, table, categories, menuItems, sessionToken
 
       if (orderError) throw orderError;
 
-      // Create order items
       const orderItems = cart.map((item) => ({
         order_id: order.id,
         menu_item_id: item.menuItem.id,
@@ -179,21 +211,20 @@ export function OrderingClient({ pub, table, categories, menuItems, sessionToken
     items: menuItems.filter((item) => item.category_id === cat.id),
   }));
 
-  // Items without category
   const uncategorizedItems = menuItems.filter((item) => !item.category_id);
 
   const getStatusInfo = (status: string) => {
     switch (status) {
       case 'pending':
-        return { icon: Clock, label: 'Waiting for confirmation', color: 'text-amber-500' };
+        return { icon: Clock, label: 'Waiting for confirmation', color: 'text-amber-400', bg: 'bg-amber-400/20' };
       case 'accepted':
-        return { icon: Check, label: 'Order confirmed', color: 'text-blue-500' };
+        return { icon: Check, label: 'Order confirmed', color: 'text-blue-400', bg: 'bg-blue-400/20' };
       case 'preparing':
-        return { icon: ChefHat, label: 'Being prepared', color: 'text-purple-500' };
+        return { icon: ChefHat, label: 'Being prepared', color: 'text-purple-400', bg: 'bg-purple-400/20' };
       case 'ready':
-        return { icon: Bell, label: 'Ready for collection!', color: 'text-green-500' };
+        return { icon: Bell, label: 'Ready for collection!', color: 'text-green-400', bg: 'bg-green-400/20' };
       default:
-        return { icon: Clock, label: status, color: 'text-gray-500' };
+        return { icon: Clock, label: status, color: 'text-gray-400', bg: 'bg-gray-400/20' };
     }
   };
 
@@ -203,65 +234,70 @@ export function OrderingClient({ pub, table, categories, menuItems, sessionToken
     const StatusIcon = statusInfo.icon;
 
     return (
-      <div className="min-h-screen bg-gradient-to-b from-amber-50 to-white">
-        <header className="sticky top-0 bg-white/80 backdrop-blur-lg border-b px-4 py-3 z-10">
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 bg-amber-600 rounded-lg">
-              <Beer className="w-4 h-4 text-white" />
+      <div className="min-h-screen bg-pub-black">
+        {/* Header */}
+        <header className="sticky top-0 bg-pub-dark/90 backdrop-blur-xl border-b border-white/5 px-4 py-4 z-10">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-amber-gradient rounded-xl glow-amber-sm">
+              <Beer className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h1 className="font-semibold text-warm-brown">{pub.name}</h1>
-              <p className="text-xs text-muted-foreground">Table {table.number}{table.name ? ` - ${table.name}` : ''}</p>
+              <h1 className="font-bold text-cream text-lg">{pub.name}</h1>
+              <p className="text-sm text-cream/60">Table {table.number}{table.name ? ` · ${table.name}` : ''}</p>
             </div>
           </div>
         </header>
 
-        <div className="p-4 max-w-md mx-auto">
+        <div className="p-4 max-w-md mx-auto pt-8">
           <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="bg-white rounded-2xl shadow-lg p-6 text-center"
+            initial={{ scale: 0.9, opacity: 0, y: 20 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            className="bg-pub-card rounded-3xl shadow-pub-lg p-8 text-center border border-white/5"
           >
-            <div className={cn(
-              "w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4",
-              activeOrder.status === 'ready' ? 'bg-green-100' : 'bg-amber-100'
-            )}>
-              <StatusIcon className={cn("w-10 h-10", statusInfo.color)} />
-            </div>
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ delay: 0.2, type: 'spring' }}
+              className={cn(
+                "w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6",
+                statusInfo.bg
+              )}
+            >
+              <StatusIcon className={cn("w-12 h-12", statusInfo.color)} />
+            </motion.div>
 
-            <h2 className="text-2xl font-bold text-warm-brown mb-2">
-              Order #{activeOrder.confirmation_code}
+            <h2 className="text-3xl font-bold text-cream mb-2">
+              Order <span className="text-gradient-amber">#{activeOrder.confirmation_code}</span>
             </h2>
 
-            <p className={cn("text-lg font-medium mb-4", statusInfo.color)}>
+            <p className={cn("text-xl font-medium mb-6", statusInfo.color)}>
               {statusInfo.label}
             </p>
 
             {activeOrder.status === 'ready' && (
               <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                className="bg-green-50 border border-green-200 rounded-xl p-4 mb-4"
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="bg-green-500/10 border border-green-500/30 rounded-2xl p-5 mb-6"
               >
-                <p className="text-green-700 font-medium">
-                  🎉 Your order is ready! Please collect from the bar.
+                <p className="text-green-400 font-medium text-lg">
+                  🎉 Your order is ready!<br />Please collect from the bar.
                 </p>
               </motion.div>
             )}
 
-            <div className="text-left bg-gray-50 rounded-xl p-4 mb-4">
-              <p className="text-sm text-muted-foreground mb-2">Order Total</p>
-              <p className="text-2xl font-bold text-warm-brown">
-                £{activeOrder.total.toFixed(2)}
+            <div className="bg-pub-dark rounded-2xl p-5 mb-6 border border-white/5">
+              <p className="text-sm text-cream/60 mb-1">Order Total</p>
+              <p className="text-4xl font-bold text-gradient-amber">
+                €{activeOrder.total.toFixed(2)}
               </p>
             </div>
 
             <Button
               onClick={() => setActiveOrder(null)}
-              variant="outline"
-              className="w-full"
+              className="w-full bg-pub-card hover:bg-pub-card-hover border border-white/10 text-cream py-6 text-lg rounded-2xl"
             >
-              Order More
+              Order More Drinks
             </Button>
           </motion.div>
         </div>
@@ -270,40 +306,117 @@ export function OrderingClient({ pub, table, categories, menuItems, sessionToken
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-amber-50 to-white pb-24">
+    <div className="min-h-screen bg-pub-black pb-28">
       {/* Header */}
-      <header className="sticky top-0 bg-white/80 backdrop-blur-lg border-b px-4 py-3 z-10">
+      <header className="sticky top-0 bg-pub-dark/90 backdrop-blur-xl border-b border-white/5 px-4 py-4 z-20">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="p-1.5 bg-amber-600 rounded-lg">
-              <Beer className="w-4 h-4 text-white" />
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-amber-gradient rounded-xl glow-amber-sm">
+              <Beer className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h1 className="font-semibold text-warm-brown">{pub.name}</h1>
-              <p className="text-xs text-muted-foreground">Table {table.number}{table.name ? ` - ${table.name}` : ''}</p>
+              <h1 className="font-bold text-cream text-lg">{pub.name}</h1>
+              <p className="text-sm text-cream/60">Table {table.number}{table.name ? ` · ${table.name}` : ''}</p>
             </div>
           </div>
+          {cartCount > 0 && (
+            <motion.button
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setShowCart(true)}
+              className="relative p-3 bg-amber-gradient rounded-2xl glow-amber"
+            >
+              <ShoppingCart className="w-5 h-5 text-white" />
+              <span className="absolute -top-1 -right-1 w-5 h-5 bg-white text-pub-black text-xs font-bold rounded-full flex items-center justify-center">
+                {cartCount}
+              </span>
+            </motion.button>
+          )}
         </div>
       </header>
 
+      {/* Hero Section */}
+      <div className="px-4 py-6">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-gradient-to-br from-amber-600/20 to-amber-900/20 rounded-3xl p-6 border border-amber-500/20"
+        >
+          <div className="flex items-center gap-2 mb-2">
+            <Sparkles className="w-5 h-5 text-amber-400" />
+            <span className="text-amber-400 font-medium">Order from your table</span>
+          </div>
+          <h2 className="text-2xl font-bold text-cream mb-1">
+            What are you having?
+          </h2>
+          <p className="text-cream/60">
+            Browse our menu and order directly. No queue, no wait.
+          </p>
+        </motion.div>
+      </div>
+
+      {/* Category Tabs */}
+      <div className="sticky top-[73px] z-10 bg-pub-black/95 backdrop-blur-lg border-b border-white/5">
+        <div className="flex overflow-x-auto scrollbar-hide px-4 py-3 gap-2">
+          {categories.map((cat) => {
+            const Icon = getCategoryIcon(cat.name);
+            const isActive = activeCategory === cat.id;
+            return (
+              <motion.button
+                key={cat.id}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => scrollToCategory(cat.id)}
+                className={cn(
+                  "flex items-center gap-2 px-4 py-2.5 rounded-full whitespace-nowrap transition-all font-medium text-sm",
+                  isActive 
+                    ? "bg-amber-gradient text-white glow-amber-sm" 
+                    : "bg-pub-card text-cream/70 hover:bg-pub-card-hover hover:text-cream border border-white/5"
+                )}
+              >
+                <Icon className="w-4 h-4" />
+                {cat.name}
+              </motion.button>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Menu */}
-      <div className="p-4 space-y-6">
+      <div className="px-4 py-4 space-y-8">
         {itemsByCategory.map(({ category, items }) => {
           if (items.length === 0) return null;
+          const Icon = getCategoryIcon(category.name);
           return (
-            <div key={category.id}>
-              <h2 className="text-lg font-semibold text-warm-brown mb-3">
-                {category.name}
-              </h2>
-              <div className="space-y-3">
-                {items.map((item) => (
-                  <MenuItemCard
+            <div 
+              key={category.id}
+              ref={(el) => { categoryRefs.current[category.id] = el; }}
+              className="scroll-mt-36"
+            >
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-pub-card rounded-xl border border-white/5">
+                  <Icon className="w-5 h-5 text-amber-400" />
+                </div>
+                <h2 className="text-xl font-bold text-cream">
+                  {category.name}
+                </h2>
+                <div className="flex-1 h-px bg-gradient-to-r from-white/10 to-transparent" />
+              </div>
+              <div className="grid gap-3">
+                {items.map((item, index) => (
+                  <motion.div
                     key={item.id}
-                    item={item}
-                    quantity={getCartQuantity(item.id)}
-                    onAdd={() => addToCart(item)}
-                    onRemove={() => removeFromCart(item.id)}
-                  />
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                  >
+                    <MenuItemCard
+                      item={item}
+                      quantity={getCartQuantity(item.id)}
+                      onAdd={() => addToCart(item)}
+                      onRemove={() => removeFromCart(item.id)}
+                    />
+                  </motion.div>
                 ))}
               </div>
             </div>
@@ -312,8 +425,14 @@ export function OrderingClient({ pub, table, categories, menuItems, sessionToken
 
         {uncategorizedItems.length > 0 && (
           <div>
-            <h2 className="text-lg font-semibold text-warm-brown mb-3">Other</h2>
-            <div className="space-y-3">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-pub-card rounded-xl border border-white/5">
+                <Beer className="w-5 h-5 text-amber-400" />
+              </div>
+              <h2 className="text-xl font-bold text-cream">Other</h2>
+              <div className="flex-1 h-px bg-gradient-to-r from-white/10 to-transparent" />
+            </div>
+            <div className="grid gap-3">
               {uncategorizedItems.map((item) => (
                 <MenuItemCard
                   key={item.id}
@@ -328,22 +447,31 @@ export function OrderingClient({ pub, table, categories, menuItems, sessionToken
         )}
       </div>
 
-      {/* Cart Button */}
-      {cartCount > 0 && (
-        <motion.div
-          initial={{ y: 100 }}
-          animate={{ y: 0 }}
-          className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t"
-        >
-          <Button
-            onClick={() => setShowCart(true)}
-            className="w-full bg-amber-600 hover:bg-amber-700 text-white py-6 text-lg"
+      {/* Floating Cart Button */}
+      <AnimatePresence>
+        {cartCount > 0 && (
+          <motion.div
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+            className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-pub-black via-pub-black to-transparent pt-8"
           >
-            <ShoppingCart className="w-5 h-5 mr-2" />
-            View Cart ({cartCount}) · £{cartTotal.toFixed(2)}
-          </Button>
-        </motion.div>
-      )}
+            <motion.button
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setShowCart(true)}
+              className="w-full bg-amber-gradient text-white py-5 px-6 rounded-2xl font-bold text-lg flex items-center justify-between glow-amber animate-pulse-glow"
+            >
+              <div className="flex items-center gap-3">
+                <div className="bg-white/20 rounded-xl p-2">
+                  <ShoppingCart className="w-5 h-5" />
+                </div>
+                <span>View Order ({cartCount} items)</span>
+              </div>
+              <span className="text-xl">€{cartTotal.toFixed(2)}</span>
+            </motion.button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Cart Sheet */}
       <AnimatePresence>
@@ -353,7 +481,7 @@ export function OrderingClient({ pub, table, categories, menuItems, sessionToken
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/50 z-40"
+              className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40"
               onClick={() => setShowCart(false)}
             />
             <motion.div
@@ -361,79 +489,89 @@ export function OrderingClient({ pub, table, categories, menuItems, sessionToken
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl z-50 max-h-[85vh] overflow-hidden flex flex-col"
+              className="fixed bottom-0 left-0 right-0 bg-pub-dark rounded-t-3xl z-50 max-h-[85vh] overflow-hidden flex flex-col border-t border-white/10"
             >
-              <div className="p-4 border-b flex items-center justify-between">
-                <h2 className="text-xl font-bold text-warm-brown">Your Order</h2>
+              {/* Cart Header */}
+              <div className="p-5 border-b border-white/5 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-amber-gradient rounded-xl">
+                    <ShoppingCart className="w-5 h-5 text-white" />
+                  </div>
+                  <h2 className="text-xl font-bold text-cream">Your Order</h2>
+                </div>
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => setShowCart(false)}
+                  className="text-cream/60 hover:text-cream hover:bg-white/5"
                 >
                   <X className="w-5 h-5" />
                 </Button>
               </div>
 
-              <div className="flex-1 overflow-auto p-4 space-y-3">
+              {/* Cart Items */}
+              <div className="flex-1 overflow-auto p-4 space-y-3 scrollbar-dark">
                 {cart.map((item) => (
-                  <div
+                  <motion.div
                     key={item.menuItem.id}
-                    className="flex items-center justify-between bg-gray-50 rounded-xl p-3"
+                    layout
+                    className="flex items-center justify-between bg-pub-card rounded-2xl p-4 border border-white/5"
                   >
                     <div className="flex-1">
-                      <p className="font-medium">{item.menuItem.name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        £{item.menuItem.price.toFixed(2)} each
+                      <p className="font-semibold text-cream">{item.menuItem.name}</p>
+                      <p className="text-sm text-cream/50">
+                        €{item.menuItem.price.toFixed(2)} each
                       </p>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
                       <Button
-                        variant="outline"
+                        variant="ghost"
                         size="icon"
-                        className="h-8 w-8"
+                        className="h-9 w-9 rounded-xl bg-pub-dark hover:bg-pub-black text-cream border border-white/10"
                         onClick={() => removeFromCart(item.menuItem.id)}
                       >
                         <Minus className="w-4 h-4" />
                       </Button>
-                      <span className="w-8 text-center font-medium">
+                      <span className="w-6 text-center font-bold text-cream text-lg">
                         {item.quantity}
                       </span>
                       <Button
-                        variant="outline"
                         size="icon"
-                        className="h-8 w-8"
+                        className="h-9 w-9 rounded-xl bg-amber-gradient text-white"
                         onClick={() => addToCart(item.menuItem)}
                       >
                         <Plus className="w-4 h-4" />
                       </Button>
                     </div>
-                  </div>
+                  </motion.div>
                 ))}
 
-                <div className="pt-4">
-                  <label className="block text-sm font-medium text-warm-brown mb-2">
-                    Notes (optional)
+                {/* Notes */}
+                <div className="pt-2">
+                  <label className="block text-sm font-medium text-cream/70 mb-2">
+                    Notes for bar staff (optional)
                   </label>
                   <textarea
                     value={orderNotes}
                     onChange={(e) => setOrderNotes(e.target.value)}
                     placeholder="Any special requests..."
-                    className="w-full p-3 border rounded-xl resize-none h-20"
+                    className="w-full p-4 bg-pub-card border border-white/10 rounded-2xl resize-none h-20 text-cream placeholder:text-cream/30 focus:outline-none focus:border-amber-500/50"
                   />
                 </div>
               </div>
 
-              <div className="p-4 border-t bg-white">
+              {/* Cart Footer */}
+              <div className="p-5 border-t border-white/5 bg-pub-dark">
                 <div className="flex justify-between items-center mb-4">
-                  <span className="text-lg font-medium">Total</span>
-                  <span className="text-2xl font-bold text-amber-600">
-                    £{cartTotal.toFixed(2)}
+                  <span className="text-lg text-cream/70">Total</span>
+                  <span className="text-3xl font-bold text-gradient-amber">
+                    €{cartTotal.toFixed(2)}
                   </span>
                 </div>
                 <Button
                   onClick={submitOrder}
                   disabled={submitting || cart.length === 0}
-                  className="w-full bg-amber-600 hover:bg-amber-700 text-white py-6 text-lg"
+                  className="w-full bg-amber-gradient hover:opacity-90 text-white py-6 text-lg font-bold rounded-2xl glow-amber disabled:opacity-50"
                 >
                   {submitting ? (
                     <>
@@ -467,58 +605,54 @@ function MenuItemCard({
   return (
     <motion.div
       layout
-      className="bg-white rounded-xl p-4 shadow-sm border flex items-center gap-4"
-    >
-      {item.image_url && (
-        <div className="w-20 h-20 rounded-lg bg-gray-100 overflow-hidden flex-shrink-0">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={item.image_url}
-            alt={item.name}
-            className="w-full h-full object-cover"
-          />
-        </div>
+      whileTap={{ scale: 0.99 }}
+      className={cn(
+        "bg-pub-card rounded-2xl p-4 border transition-all",
+        quantity > 0 ? "border-amber-500/50 glow-amber-sm" : "border-white/5 hover:border-white/10"
       )}
-      <div className="flex-1 min-w-0">
-        <h3 className="font-medium text-warm-brown">{item.name}</h3>
-        {item.description && (
-          <p className="text-sm text-muted-foreground line-clamp-2">
-            {item.description}
+    >
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex-1 min-w-0">
+          <h3 className="font-semibold text-cream text-lg">{item.name}</h3>
+          {item.description && (
+            <p className="text-sm text-cream/50 line-clamp-1 mt-0.5">
+              {item.description}
+            </p>
+          )}
+          <p className="text-xl font-bold text-amber-400 mt-2">
+            €{item.price.toFixed(2)}
           </p>
-        )}
-        <p className="text-amber-600 font-semibold mt-1">
-          £{item.price.toFixed(2)}
-        </p>
-      </div>
-      <div className="flex-shrink-0">
-        {quantity === 0 ? (
-          <Button
-            onClick={onAdd}
-            size="icon"
-            className="bg-amber-600 hover:bg-amber-700 text-white h-10 w-10 rounded-full"
-          >
-            <Plus className="w-5 h-5" />
-          </Button>
-        ) : (
-          <div className="flex items-center gap-1">
-            <Button
-              onClick={onRemove}
-              variant="outline"
-              size="icon"
-              className="h-8 w-8 rounded-full"
-            >
-              <Minus className="w-4 h-4" />
-            </Button>
-            <span className="w-6 text-center font-medium">{quantity}</span>
-            <Button
+        </div>
+        
+        <div className="flex-shrink-0">
+          {quantity === 0 ? (
+            <motion.button
+              whileTap={{ scale: 0.9 }}
               onClick={onAdd}
-              size="icon"
-              className="bg-amber-600 hover:bg-amber-700 text-white h-8 w-8 rounded-full"
+              className="bg-amber-gradient text-white h-12 w-12 rounded-xl flex items-center justify-center glow-amber-sm"
             >
-              <Plus className="w-4 h-4" />
-            </Button>
-          </div>
-        )}
+              <Plus className="w-5 h-5" />
+            </motion.button>
+          ) : (
+            <div className="flex items-center gap-2 bg-pub-dark rounded-xl p-1 border border-white/10">
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={onRemove}
+                className="h-10 w-10 rounded-lg bg-pub-card hover:bg-pub-card-hover text-cream flex items-center justify-center"
+              >
+                <Minus className="w-4 h-4" />
+              </motion.button>
+              <span className="w-6 text-center font-bold text-cream">{quantity}</span>
+              <motion.button
+                whileTap={{ scale: 0.9 }}
+                onClick={onAdd}
+                className="h-10 w-10 rounded-lg bg-amber-gradient text-white flex items-center justify-center"
+              >
+                <Plus className="w-4 h-4" />
+              </motion.button>
+            </div>
+          )}
+        </div>
       </div>
     </motion.div>
   );
