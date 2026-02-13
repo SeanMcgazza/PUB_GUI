@@ -97,18 +97,20 @@
 
 /* Light mode override for admin dashboard */
 .light {
-  --background: #FFFBF8;
-  --foreground: #2D2A26;
+  --background: #FFFFFF;
+  --foreground: #1a1a1a;
   --card: #FFFFFF;
-  --card-foreground: #2D2A26;
+  --card-foreground: #1a1a1a;
   --popover: #FFFFFF;
-  --popover-foreground: #2D2A26;
-  --muted: #F5F0EC;
-  --muted-foreground: #6B6560;
-  --accent: #F5F0EC;
-  --accent-foreground: #2D2A26;
-  --border: #E8E4E0;
-  --input: #E8E4E0;
+  --popover-foreground: #1a1a1a;
+  --muted: #F5F5F5;
+  --muted-foreground: #525252;
+  --accent: #F5F5F5;
+  --accent-foreground: #1a1a1a;
+  --border: #E5E5E5;
+  --input: #E5E5E5;
+  --primary: #B45309;
+  --primary-foreground: #FFFFFF;
 }
 
 @layer base {

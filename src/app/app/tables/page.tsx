@@ -184,7 +184,7 @@ export default function TablesPage() {
         className="mb-6 flex items-center justify-between"
       >
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-warm-brown">Tables</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Tables</h1>
           <p className="text-muted-foreground">
             {tables.length} table{tables.length !== 1 ? 's' : ''} configured
           </p>
@@ -192,7 +192,7 @@ export default function TablesPage() {
         <Dialog open={showDialog} onOpenChange={setShowDialog}>
           <DialogTrigger asChild>
             <Button
-              className="bg-amber-600 hover:bg-amber-700 text-white"
+              className="bg-gray-900 hover:bg-gray-800 text-white"
               onClick={() => setEditingTable(null)}
             >
               <Plus className="w-4 h-4 mr-2" />
@@ -223,14 +223,14 @@ export default function TablesPage() {
           className="text-center py-12 bg-white rounded-xl border"
         >
           <LayoutGrid className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-warm-brown mb-2">
+          <h3 className="text-lg font-medium text-gray-900 mb-2">
             No tables yet
           </h3>
           <p className="text-muted-foreground mb-4">
             Add tables and generate QR codes for customers to scan
           </p>
           <Button
-            className="bg-amber-600 hover:bg-amber-700 text-white"
+            className="bg-gray-900 hover:bg-gray-800 text-white"
             onClick={() => {
               setEditingTable(null);
               setShowDialog(true);
@@ -251,7 +251,7 @@ export default function TablesPage() {
             >
               <div className="flex items-start justify-between mb-4">
                 <div>
-                  <h3 className="text-xl font-bold text-warm-brown">
+                  <h3 className="text-xl font-bold text-gray-900">
                     Table {table.number}
                   </h3>
                   {table.name && (
@@ -262,7 +262,7 @@ export default function TablesPage() {
                   className={cn(
                     'px-2 py-1 rounded-full text-xs font-medium',
                     table.status === 'available' && 'bg-green-100 text-green-700',
-                    table.status === 'occupied' && 'bg-amber-100 text-amber-700',
+                    table.status === 'occupied' && 'bg-gray-100 text-gray-700',
                     table.status === 'reserved' && 'bg-blue-100 text-blue-700'
                   )}
                 >
@@ -483,7 +483,7 @@ function TableDialog({
           <Button
             type="submit"
             disabled={saving || !number}
-            className="bg-amber-600 hover:bg-amber-700 text-white"
+            className="bg-gray-900 hover:bg-gray-800 text-white"
           >
             {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
             {table ? 'Save' : 'Add Table'}

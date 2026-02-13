@@ -20,7 +20,7 @@ type OrderWithDetails = Order & {
 };
 
 const statusFilters = [
-  { key: 'pending', label: 'Pending', icon: Clock, color: 'bg-amber-500' },
+  { key: 'pending', label: 'Pending', icon: Clock, color: 'bg-gray-700' },
   { key: 'accepted', label: 'Accepted', icon: Check, color: 'bg-blue-500' },
   { key: 'preparing', label: 'Preparing', icon: ChefHat, color: 'bg-purple-500' },
   { key: 'ready', label: 'Ready', icon: Bell, color: 'bg-green-500' },
@@ -167,7 +167,7 @@ export default function DashboardPage() {
         className="mb-6 flex items-center justify-between"
       >
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-warm-brown">Orders</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Orders</h1>
           <p className="text-muted-foreground">
             {orders.length} active order{orders.length !== 1 ? 's' : ''}
           </p>
@@ -178,7 +178,7 @@ export default function DashboardPage() {
             size="icon"
             onClick={() => setSoundEnabled(!soundEnabled)}
             className={cn(
-              soundEnabled ? 'text-amber-600' : 'text-muted-foreground'
+              soundEnabled ? 'text-gray-900' : 'text-muted-foreground'
             )}
           >
             {soundEnabled ? (
@@ -203,7 +203,7 @@ export default function DashboardPage() {
           variant={activeFilter === null ? 'default' : 'outline'}
           onClick={() => setActiveFilter(null)}
           className={cn(
-            activeFilter === null && 'bg-amber-600 hover:bg-amber-700'
+            activeFilter === null && 'bg-gray-900 hover:bg-gray-800'
           )}
         >
           All ({orders.length})
@@ -244,7 +244,7 @@ export default function DashboardPage() {
           className="text-center py-12"
         >
           <Package className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-warm-brown mb-2">
+          <h3 className="text-lg font-medium text-gray-900 mb-2">
             No orders yet
           </h3>
           <p className="text-muted-foreground">
@@ -278,7 +278,7 @@ function OrderCard({
   onUpdateStatus: (orderId: string, status: string) => void;
 }) {
   const statusConfig = {
-    pending: { bg: 'bg-amber-50 border-amber-200', badge: 'bg-amber-500', next: 'accepted', nextLabel: 'Accept' },
+    pending: { bg: 'bg-gray-50 border-gray-200', badge: 'bg-gray-700', next: 'accepted', nextLabel: 'Accept' },
     accepted: { bg: 'bg-blue-50 border-blue-200', badge: 'bg-blue-500', next: 'preparing', nextLabel: 'Start Preparing' },
     preparing: { bg: 'bg-purple-50 border-purple-200', badge: 'bg-purple-500', next: 'ready', nextLabel: 'Mark Ready' },
     ready: { bg: 'bg-green-50 border-green-200', badge: 'bg-green-500', next: 'collected', nextLabel: 'Collected' },
@@ -302,7 +302,7 @@ function OrderCard({
       <div className="flex items-start justify-between mb-3">
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-2xl font-bold text-warm-brown">
+            <span className="text-2xl font-bold text-gray-900">
               #{order.confirmation_code}
             </span>
             <span className={cn(
@@ -328,7 +328,7 @@ function OrderCard({
               {item.quantity}× {item.name}
             </span>
             <span className="text-muted-foreground">
-              £{(item.price * item.quantity).toFixed(2)}
+              €{(item.price * item.quantity).toFixed(2)}
             </span>
           </div>
         ))}
@@ -345,8 +345,8 @@ function OrderCard({
       {/* Total */}
       <div className="flex justify-between items-center pt-3 border-t border-white/50 mb-4">
         <span className="font-medium">Total</span>
-        <span className="text-xl font-bold text-warm-brown">
-          £{order.total.toFixed(2)}
+        <span className="text-xl font-bold text-gray-900">
+          €{order.total.toFixed(2)}
         </span>
       </div>
 
@@ -355,7 +355,7 @@ function OrderCard({
         {config?.next && config.next !== 'collected' && (
           <Button
             onClick={() => onUpdateStatus(order.id, config.next)}
-            className="flex-1 bg-amber-600 hover:bg-amber-700 text-white"
+            className="flex-1 bg-gray-900 hover:bg-gray-800 text-white"
           >
             {config.nextLabel}
           </Button>

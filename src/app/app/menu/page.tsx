@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { createClient } from '@/lib/supabase/client';
 import { usePub } from '@/hooks/usePub';
-import { DEMO_CATEGORIES, DEMO_MENU_ITEMS, isDemoMode } from '@/lib/demo-data';
+import { DEMO_CATEGORIES, DemoMenuState, isDemoMode } from '@/lib/demo-data';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -20,7 +20,7 @@ import { cn } from '@/lib/utils';
 import type { MenuCategory, MenuItem } from '@/types/database';
 import { 
   Plus, Pencil, Trash2, GripVertical, Loader2,
-  UtensilsCrossed, FolderPlus
+  UtensilsCrossed, FolderPlus, RefreshCw
 } from 'lucide-react';
 
 export default function MenuPage() {
@@ -36,10 +36,10 @@ export default function MenuPage() {
   const fetchData = useCallback(async () => {
     if (!pub) return;
 
-    // Demo mode - use mock data
+    // Demo mode - use localStorage-synced data
     if (isDemoMode()) {
       setCategories(DEMO_CATEGORIES as unknown as MenuCategory[]);
-      setItems(DEMO_MENU_ITEMS as unknown as MenuItem[]);
+      setItems(DemoMenuState.getItems() as unknown as MenuItem[]);
       setLoading(false);
       return;
     }
@@ -66,16 +66,21 @@ export default function MenuPage() {
 
   useEffect(() => {
     fetchData();
+    
+    // Subscribe to demo menu updates (for cross-tab sync)
+    if (isDemoMode()) {
+      const unsubscribe = DemoMenuState.subscribe((updatedItems) => {
+        setItems(updatedItems as unknown as MenuItem[]);
+      });
+      return unsubscribe;
+    }
   }, [fetchData]);
 
   const toggleAvailability = async (item: MenuItem) => {
-    // Demo mode - update local state only
+    // Demo mode - use DemoMenuState for persistence
     if (isDemoMode()) {
-      setItems((prev) =>
-        prev.map((i) =>
-          i.id === item.id ? { ...i, is_available: !i.is_available } : i
-        )
-      );
+      const updated = DemoMenuState.toggleAvailability(item.id);
+      setItems(updated as unknown as MenuItem[]);
       return;
     }
 
@@ -98,9 +103,10 @@ export default function MenuPage() {
   const deleteItem = async (itemId: string) => {
     if (!confirm('Delete this menu item?')) return;
 
-    // Demo mode - update local state only
+    // Demo mode - use DemoMenuState
     if (isDemoMode()) {
-      setItems((prev) => prev.filter((i) => i.id !== itemId));
+      const updated = DemoMenuState.deleteItem(itemId);
+      setItems(updated as unknown as MenuItem[]);
       return;
     }
 
@@ -134,8 +140,14 @@ export default function MenuPage() {
 
     if (!error) {
       setCategories((prev) => prev.filter((c) => c.id !== categoryId));
-      fetchData(); // Refresh to update items
+      fetchData();
     }
+  };
+
+  const resetToDefaults = () => {
+    if (!confirm('Reset menu to default items? This will undo all changes.')) return;
+    const updated = DemoMenuState.reset();
+    setItems(updated as unknown as MenuItem[]);
   };
 
   // Group items by category
@@ -152,15 +164,24 @@ export default function MenuPage() {
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="mb-6 flex items-center justify-between"
+        className="mb-6"
       >
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-warm-brown">Menu</h1>
-          <p className="text-muted-foreground">
-            {items.length} item{items.length !== 1 ? 's' : ''} in {categories.length} categor{categories.length !== 1 ? 'ies' : 'y'}
-          </p>
+        <div className="flex items-center justify-between mb-2">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Menu</h1>
+            <p className="text-gray-500">
+              {items.length} item{items.length !== 1 ? 's' : ''} in {categories.length} categor{categories.length !== 1 ? 'ies' : 'y'}
+            </p>
+          </div>
         </div>
-        <div className="flex gap-2">
+        
+        <div className="flex flex-wrap gap-2 mt-4">
+          {isDemoMode() && (
+            <Button variant="outline" size="sm" onClick={resetToDefaults}>
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Reset Menu
+            </Button>
+          )}
           <Dialog open={showCategoryDialog} onOpenChange={setShowCategoryDialog}>
             <DialogTrigger asChild>
               <Button variant="outline" onClick={() => setEditingCategory(null)}>
@@ -181,7 +202,7 @@ export default function MenuPage() {
           <Dialog open={showItemDialog} onOpenChange={setShowItemDialog}>
             <DialogTrigger asChild>
               <Button
-                className="bg-amber-600 hover:bg-amber-700 text-white"
+                className="bg-gray-900 hover:bg-gray-800 text-white"
                 onClick={() => setEditingItem(null)}
               >
                 <Plus className="w-4 h-4 mr-2" />
@@ -195,15 +216,29 @@ export default function MenuPage() {
               onClose={() => {
                 setShowItemDialog(false);
                 setEditingItem(null);
-                fetchData();
+                if (isDemoMode()) {
+                  setItems(DemoMenuState.getItems() as unknown as MenuItem[]);
+                } else {
+                  fetchData();
+                }
               }}
             />
           </Dialog>
         </div>
       </motion.div>
 
+      {/* Demo Mode Notice */}
+      {isDemoMode() && (
+        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+          <p className="text-blue-800 text-sm">
+            <strong>Demo Mode:</strong> Changes sync with customer app via browser storage. 
+            Toggle items on/off and refresh the customer page to see changes.
+          </p>
+        </div>
+      )}
+
       {loading ? (
-        <div className="text-center py-12 text-muted-foreground">
+        <div className="text-center py-12 text-gray-500">
           Loading menu...
         </div>
       ) : items.length === 0 ? (
@@ -212,15 +247,15 @@ export default function MenuPage() {
           animate={{ opacity: 1 }}
           className="text-center py-12 bg-white rounded-xl border"
         >
-          <UtensilsCrossed className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-warm-brown mb-2">
+          <UtensilsCrossed className="w-16 h-16 text-gray-500 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">
             No menu items yet
           </h3>
-          <p className="text-muted-foreground mb-4">
+          <p className="text-gray-500 mb-4">
             Add your first menu item to get started
           </p>
           <Button
-            className="bg-amber-600 hover:bg-amber-700 text-white"
+            className="bg-gray-900 hover:bg-gray-800 text-white"
             onClick={() => {
               setEditingItem(null);
               setShowItemDialog(true);
@@ -241,9 +276,9 @@ export default function MenuPage() {
             >
               <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b">
                 <div className="flex items-center gap-2">
-                  <GripVertical className="w-4 h-4 text-muted-foreground" />
-                  <h2 className="font-semibold text-warm-brown">{category.name}</h2>
-                  <span className="text-sm text-muted-foreground">
+                  <GripVertical className="w-4 h-4 text-gray-500" />
+                  <h2 className="font-semibold text-gray-900">{category.name}</h2>
+                  <span className="text-sm text-gray-500">
                     ({catItems.length})
                   </span>
                 </div>
@@ -282,7 +317,7 @@ export default function MenuPage() {
                   />
                 ))}
                 {catItems.length === 0 && (
-                  <div className="p-4 text-center text-muted-foreground text-sm">
+                  <div className="p-4 text-center text-gray-500 text-sm">
                     No items in this category
                   </div>
                 )}
@@ -297,7 +332,7 @@ export default function MenuPage() {
               className="bg-white rounded-xl border overflow-hidden"
             >
               <div className="px-4 py-3 bg-gray-50 border-b">
-                <h2 className="font-semibold text-warm-brown">Uncategorized</h2>
+                <h2 className="font-semibold text-gray-900">Uncategorized</h2>
               </div>
               <div className="divide-y">
                 {uncategorizedItems.map((item) => (
@@ -335,26 +370,26 @@ function MenuItemRow({
   return (
     <div className={cn(
       'flex items-center gap-4 p-4',
-      !item.is_available && 'opacity-50 bg-gray-50'
+      !item.is_available && 'opacity-60 bg-gray-50'
     )}>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className="font-medium text-warm-brown">{item.name}</span>
+          <span className="font-semibold text-gray-900">{item.name}</span>
           {!item.is_available && (
-            <span className="px-2 py-0.5 bg-gray-200 text-gray-600 text-xs rounded">
-              Unavailable
+            <span className="px-2 py-0.5 bg-red-100 text-red-600 text-xs rounded font-medium">
+              OFF
             </span>
           )}
         </div>
         {item.description && (
-          <p className="text-sm text-muted-foreground truncate">
+          <p className="text-sm text-gray-500 truncate">
             {item.description}
           </p>
         )}
       </div>
       <div className="text-right">
-        <span className="font-semibold text-amber-600">
-          £{item.price.toFixed(2)}
+        <span className="font-bold text-gray-700">
+          €{item.price.toFixed(2)}
         </span>
       </div>
       <Switch
@@ -391,36 +426,77 @@ function ItemDialog({
   const [description, setDescription] = useState(item?.description || '');
   const [price, setPrice] = useState(item?.price?.toString() || '');
   const [categoryId, setCategoryId] = useState(item?.category_id || '');
-  const [imageUrl, setImageUrl] = useState(item?.image_url || '');
   const [saving, setSaving] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as any;
+  const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!pub || !name || !price) return;
 
+    setError('');
     setSaving(true);
+
     try {
+      const priceNum = parseFloat(price);
+      if (isNaN(priceNum) || priceNum < 0) {
+        setError('Please enter a valid price');
+        setSaving(false);
+        return;
+      }
+
+      // Demo mode - use DemoMenuState
+      if (isDemoMode()) {
+        if (item) {
+          DemoMenuState.updateItem(item.id, {
+            name,
+            description: description || null,
+            price: priceNum,
+            category_id: categoryId || null,
+          } as never);
+        } else {
+          DemoMenuState.addItem({
+            id: `m${Date.now()}`,
+            pub_id: pub.id,
+            name,
+            description: description || null,
+            price: priceNum,
+            category_id: categoryId || null,
+            is_available: true,
+            image_url: null,
+          } as never);
+        }
+        onClose();
+        return;
+      }
+
+      // Production mode
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const supabase = createClient() as any;
       const data = {
         pub_id: pub.id,
         name,
         description: description || null,
-        price: parseFloat(price),
+        price: priceNum,
         category_id: categoryId || null,
-        image_url: imageUrl || null,
       };
 
       if (item) {
-        await supabase.from('menu_items').update(data).eq('id', item.id);
+        const { error: updateError } = await supabase
+          .from('menu_items')
+          .update(data)
+          .eq('id', item.id);
+        if (updateError) throw updateError;
       } else {
-        await supabase.from('menu_items').insert(data);
+        const { error: insertError } = await supabase
+          .from('menu_items')
+          .insert({ ...data, is_available: true });
+        if (insertError) throw insertError;
       }
 
       onClose();
     } catch (err) {
       console.error('Error saving item:', err);
-      alert('Failed to save item');
+      setError('Failed to save item. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -432,12 +508,18 @@ function ItemDialog({
         <DialogTitle>{item ? 'Edit Item' : 'Add Item'}</DialogTitle>
       </DialogHeader>
       <form onSubmit={handleSubmit} className="space-y-4">
+        {error && (
+          <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+            {error}
+          </div>
+        )}
         <div>
           <Label htmlFor="name">Name *</Label>
           <Input
             id="name"
             value={name}
             onChange={(e) => setName(e.target.value)}
+            placeholder="e.g. Guinness"
             required
           />
         </div>
@@ -447,11 +529,12 @@ function ItemDialog({
             id="description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
+            placeholder="e.g. 568ml pint"
           />
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <Label htmlFor="price">Price (£) *</Label>
+            <Label htmlFor="price">Price (€) *</Label>
             <Input
               id="price"
               type="number"
@@ -459,6 +542,7 @@ function ItemDialog({
               min="0"
               value={price}
               onChange={(e) => setPrice(e.target.value)}
+              placeholder="5.50"
               required
             />
           </div>
@@ -479,16 +563,6 @@ function ItemDialog({
             </select>
           </div>
         </div>
-        <div>
-          <Label htmlFor="image">Image URL</Label>
-          <Input
-            id="image"
-            type="url"
-            value={imageUrl}
-            onChange={(e) => setImageUrl(e.target.value)}
-            placeholder="https://..."
-          />
-        </div>
         <div className="flex justify-end gap-2 pt-4">
           <Button type="button" variant="outline" onClick={onClose}>
             Cancel
@@ -496,10 +570,10 @@ function ItemDialog({
           <Button
             type="submit"
             disabled={saving || !name || !price}
-            className="bg-amber-600 hover:bg-amber-700 text-white"
+            className="bg-gray-900 hover:bg-gray-800 text-white"
           >
             {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-            {item ? 'Save' : 'Add Item'}
+            {item ? 'Save Changes' : 'Add Item'}
           </Button>
         </div>
       </form>
@@ -518,6 +592,7 @@ function CategoryDialog({
 }) {
   const [name, setName] = useState(category?.name || '');
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const supabase = createClient() as any;
 
@@ -525,7 +600,9 @@ function CategoryDialog({
     e.preventDefault();
     if (!pub || !name) return;
 
+    setError('');
     setSaving(true);
+
     try {
       if (category) {
         await supabase
@@ -533,7 +610,6 @@ function CategoryDialog({
           .update({ name })
           .eq('id', category.id);
       } else {
-        // Get max order
         const { data: maxOrder } = await supabase
           .from('menu_categories')
           .select('order')
@@ -552,7 +628,7 @@ function CategoryDialog({
       onClose();
     } catch (err) {
       console.error('Error saving category:', err);
-      alert('Failed to save category');
+      setError('Failed to save category. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -564,6 +640,11 @@ function CategoryDialog({
         <DialogTitle>{category ? 'Edit Category' : 'Add Category'}</DialogTitle>
       </DialogHeader>
       <form onSubmit={handleSubmit} className="space-y-4">
+        {error && (
+          <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+            {error}
+          </div>
+        )}
         <div>
           <Label htmlFor="catName">Name *</Label>
           <Input
@@ -581,7 +662,7 @@ function CategoryDialog({
           <Button
             type="submit"
             disabled={saving || !name}
-            className="bg-amber-600 hover:bg-amber-700 text-white"
+            className="bg-gray-900 hover:bg-gray-800 text-white"
           >
             {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
             {category ? 'Save' : 'Add Category'}

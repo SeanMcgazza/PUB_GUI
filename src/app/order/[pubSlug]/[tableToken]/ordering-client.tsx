@@ -3,13 +3,14 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createClient } from '@/lib/supabase/client';
+import { DemoMenuState, DemoOrdersState, isDemoMode } from '@/lib/demo-data';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { Pub, Table, MenuCategory, MenuItem, Order } from '@/types/database';
 import { 
   Beer, ShoppingCart, Plus, Minus, X, Check, 
   Clock, ChefHat, Bell, Loader2, Sparkles,
-  Wine, Coffee, UtensilsCrossed, GlassWater
+  Wine, Coffee, UtensilsCrossed, GlassWater, RefreshCw
 } from 'lucide-react';
 
 interface CartItem {
@@ -46,16 +47,33 @@ function getCategoryIcon(name: string) {
   return Beer;
 }
 
-export function OrderingClient({ pub, table, categories, menuItems, sessionToken }: Props) {
+export function OrderingClient({ pub, table, categories, menuItems: initialMenuItems, sessionToken }: Props) {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [showCart, setShowCart] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [activeOrder, setActiveOrder] = useState<Order | null>(null);
   const [orderNotes, setOrderNotes] = useState('');
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [menuItems, setMenuItems] = useState<MenuItem[]>(initialMenuItems);
   const categoryRefs = useRef<Record<string, HTMLDivElement | null>>({});
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const supabase = createClient() as any;
+
+  // Load menu from localStorage in demo mode and subscribe to updates
+  useEffect(() => {
+    if (isDemoMode()) {
+      // Initial load from localStorage
+      const storedItems = DemoMenuState.getItems();
+      setMenuItems(storedItems as unknown as MenuItem[]);
+      
+      // Subscribe to updates (cross-tab sync)
+      const unsubscribe = DemoMenuState.subscribe((updatedItems) => {
+        setMenuItems(updatedItems as unknown as MenuItem[]);
+      });
+      
+      return unsubscribe;
+    }
+  }, []);
 
   // Set initial active category
   useEffect(() => {
@@ -63,6 +81,14 @@ export function OrderingClient({ pub, table, categories, menuItems, sessionToken
       setActiveCategory(categories[0].id);
     }
   }, [categories, activeCategory]);
+
+  // Refresh menu data
+  const refreshMenu = () => {
+    if (isDemoMode()) {
+      const storedItems = DemoMenuState.getItems();
+      setMenuItems(storedItems as unknown as MenuItem[]);
+    }
+  };
 
   // Set session cookie
   useEffect(() => {
@@ -161,6 +187,32 @@ export function OrderingClient({ pub, table, categories, menuItems, sessionToken
     
     setSubmitting(true);
     try {
+      // Demo mode - use DemoOrdersState
+      if (isDemoMode()) {
+        const order = DemoOrdersState.addOrder({
+          table_id: table.id,
+          table_number: table.number,
+          table_name: table.name || undefined,
+          items: cart.map((item) => ({
+            id: item.menuItem.id,
+            name: item.menuItem.name,
+            price: item.menuItem.price,
+            quantity: item.quantity,
+            notes: item.notes,
+          })),
+          total: cartTotal,
+          notes: orderNotes || undefined,
+        });
+
+        setActiveOrder(order as unknown as Order);
+        setCart([]);
+        setOrderNotes('');
+        setShowCart(false);
+        setSubmitting(false);
+        return;
+      }
+
+      // Production mode - use Supabase
       const confirmationCode = String(Math.floor(1000 + Math.random() * 9000));
 
       const { data: order, error: orderError } = await supabase
@@ -205,13 +257,15 @@ export function OrderingClient({ pub, table, categories, menuItems, sessionToken
     }
   };
 
-  // Group menu items by category
+  // Filter to only available items and group by category
+  const availableItems = menuItems.filter((item) => item.is_available);
+  
   const itemsByCategory = categories.map((cat) => ({
     category: cat,
-    items: menuItems.filter((item) => item.category_id === cat.id),
+    items: availableItems.filter((item) => item.category_id === cat.id),
   }));
 
-  const uncategorizedItems = menuItems.filter((item) => !item.category_id);
+  const uncategorizedItems = availableItems.filter((item) => !item.category_id);
 
   const getStatusInfo = (status: string) => {
     switch (status) {
@@ -343,9 +397,20 @@ export function OrderingClient({ pub, table, categories, menuItems, sessionToken
           animate={{ opacity: 1, y: 0 }}
           className="bg-gradient-to-br from-amber-600/20 to-amber-900/20 rounded-3xl p-6 border border-amber-500/20"
         >
-          <div className="flex items-center gap-2 mb-2">
-            <Sparkles className="w-5 h-5 text-amber-400" />
-            <span className="text-amber-400 font-medium">Order from your table</span>
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-amber-400" />
+              <span className="text-amber-400 font-medium">Order from your table</span>
+            </div>
+            {isDemoMode() && (
+              <button 
+                onClick={refreshMenu}
+                className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+                title="Refresh menu"
+              >
+                <RefreshCw className="w-4 h-4 text-amber-400" />
+              </button>
+            )}
           </div>
           <h2 className="text-2xl font-bold text-cream mb-1">
             What are you having?

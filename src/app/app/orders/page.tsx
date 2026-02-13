@@ -71,7 +71,7 @@ export default function OrdersPage() {
 
   const getStatusBadge = (status: string) => {
     const styles = {
-      pending: 'bg-amber-100 text-amber-700',
+      pending: 'bg-gray-100 text-gray-700',
       accepted: 'bg-blue-100 text-blue-700',
       preparing: 'bg-purple-100 text-purple-700',
       ready: 'bg-green-100 text-green-700',
@@ -99,7 +99,7 @@ export default function OrdersPage() {
         animate={{ opacity: 1, y: 0 }}
         className="mb-6"
       >
-        <h1 className="text-2xl md:text-3xl font-bold text-warm-brown">Order History</h1>
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Order History</h1>
         <p className="text-muted-foreground">
           View and manage all orders
         </p>
@@ -109,15 +109,15 @@ export default function OrdersPage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <div className="bg-white rounded-xl border p-4">
           <p className="text-sm text-muted-foreground">Total Orders</p>
-          <p className="text-2xl font-bold text-warm-brown">{stats.total}</p>
+          <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
         </div>
         <div className="bg-white rounded-xl border p-4">
           <p className="text-sm text-muted-foreground">Revenue</p>
-          <p className="text-2xl font-bold text-green-600">£{stats.revenue.toFixed(2)}</p>
+          <p className="text-2xl font-bold text-green-600">€{stats.revenue.toFixed(2)}</p>
         </div>
         <div className="bg-white rounded-xl border p-4">
           <p className="text-sm text-muted-foreground">Completed</p>
-          <p className="text-2xl font-bold text-warm-brown">{stats.completed}</p>
+          <p className="text-2xl font-bold text-gray-900">{stats.completed}</p>
         </div>
         <div className="bg-white rounded-xl border p-4">
           <p className="text-sm text-muted-foreground">Cancelled</p>
@@ -167,7 +167,7 @@ export default function OrdersPage() {
           className="text-center py-12 bg-white rounded-xl border"
         >
           <ClipboardList className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-warm-brown mb-2">
+          <h3 className="text-lg font-medium text-gray-900 mb-2">
             No orders found
           </h3>
           <p className="text-muted-foreground">
@@ -216,7 +216,7 @@ export default function OrdersPage() {
                       }
                     >
                       <td className="px-4 py-3">
-                        <span className="font-mono font-bold text-amber-600">
+                        <span className="font-mono font-bold text-gray-900">
                           #{order.confirmation_code}
                         </span>
                       </td>
@@ -228,7 +228,7 @@ export default function OrdersPage() {
                         {order.order_items.length !== 1 ? 's' : ''}
                       </td>
                       <td className="px-4 py-3 font-medium">
-                        £{order.total.toFixed(2)}
+                        €{order.total.toFixed(2)}
                       </td>
                       <td className="px-4 py-3">
                         <span
@@ -257,7 +257,7 @@ export default function OrdersPage() {
                       <tr key={`${order.id}-details`}>
                         <td colSpan={7} className="px-4 py-4 bg-gray-50">
                           <div className="space-y-2">
-                            <p className="text-sm font-medium text-warm-brown">
+                            <p className="text-sm font-medium text-gray-900">
                               Order Items:
                             </p>
                             {order.order_items.map((item) => (
@@ -269,7 +269,7 @@ export default function OrdersPage() {
                                   {item.quantity}× {item.name}
                                 </span>
                                 <span className="text-muted-foreground">
-                                  £{(item.price * item.quantity).toFixed(2)}
+                                  €{(item.price * item.quantity).toFixed(2)}
                                 </span>
                               </div>
                             ))}
