@@ -120,45 +120,182 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Features */}
+      {/* Key Benefits */}
       <section className="py-20 px-4">
         <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl font-bold text-warm-brown text-center mb-12">
+          <h2 className="text-3xl font-bold text-warm-brown text-center mb-4">
             Built for Busy Pubs
           </h2>
+          <p className="text-muted-foreground text-center mb-12 max-w-2xl mx-auto">
+            Less waiting, more orders, happier customers.
+          </p>
 
-          <div className="grid md:grid-cols-2 gap-6">
+          {/* Hero features - 2 main benefits */}
+          <div className="grid md:grid-cols-2 gap-8 mb-8">
+            <div className="p-8 bg-amber-600 text-white rounded-2xl">
+              <div className="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center mb-4">
+                <Zap className="w-7 h-7" />
+              </div>
+              <h3 className="text-xl font-bold mb-2">Real-Time Orders</h3>
+              <p className="text-amber-100">
+                Orders appear instantly on your dashboard with sound notifications. Never miss an order, even on the busiest nights.
+              </p>
+            </div>
+            <div className="p-8 bg-amber-600 text-white rounded-2xl">
+              <div className="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center mb-4">
+                <Smartphone className="w-7 h-7" />
+              </div>
+              <h3 className="text-xl font-bold mb-2">No App Download</h3>
+              <p className="text-amber-100">
+                Customers just scan and order — no app download, no account creation, no friction. Works on any phone.
+              </p>
+            </div>
+          </div>
+
+          {/* Secondary features */}
+          <div className="grid md:grid-cols-4 gap-4">
             {[
-              {
-                title: 'Real-Time Orders',
-                description: 'Orders appear instantly on your dashboard with sound notifications. Never miss an order.',
-              },
-              {
-                title: 'Mobile-First Design',
-                description: 'Customers order on their phones. Your staff manage orders on any device.',
-              },
-              {
-                title: 'No App Required',
-                description: 'Customers just scan and order — no app download, no account creation.',
-              },
-              {
-                title: 'Easy Menu Management',
-                description: 'Update your menu, prices, and availability in seconds from your dashboard.',
-              },
-              {
-                title: 'Table-Specific QR Codes',
-                description: 'Know exactly which table ordered. Deliver to the right place every time.',
-              },
-              {
-                title: 'Order Status Updates',
-                description: 'Customers see their order status in real-time. They know when to collect.',
-              },
+              { title: 'Table-Specific QR', desc: 'Know exactly which table ordered' },
+              { title: 'Easy Menu Updates', desc: 'Change prices in seconds' },
+              { title: 'Order Status', desc: 'Customers track their order' },
+              { title: 'Works Anywhere', desc: 'Manage from any device' },
             ].map((feature, i) => (
-              <div key={i} className="p-6 bg-white rounded-2xl border">
-                <h3 className="font-semibold text-warm-brown mb-2">{feature.title}</h3>
-                <p className="text-muted-foreground">{feature.description}</p>
+              <div key={i} className="p-4 bg-white rounded-xl border text-center">
+                <h3 className="font-semibold text-warm-brown mb-1">{feature.title}</h3>
+                <p className="text-sm text-muted-foreground">{feature.desc}</p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Demo Preview */}
+      <section className="py-20 px-4 bg-amber-50">
+        <div className="max-w-6xl mx-auto">
+          <h2 className="text-3xl font-bold text-warm-brown text-center mb-4">
+            See It In Action
+          </h2>
+          <p className="text-muted-foreground text-center mb-12 max-w-2xl mx-auto">
+            Here's what your customers see when they scan your QR code.
+          </p>
+          
+          <div className="flex justify-center">
+            <div className="relative">
+              {/* Phone mockup */}
+              <div className="w-72 bg-gray-900 rounded-[3rem] p-3 shadow-2xl">
+                <div className="bg-white rounded-[2.5rem] overflow-hidden">
+                  {/* Status bar */}
+                  <div className="bg-amber-600 text-white px-6 py-3 flex items-center justify-between">
+                    <span className="font-semibold">🍺 The Local Pub</span>
+                    <span className="text-sm">Table 7</span>
+                  </div>
+                  {/* Menu items */}
+                  <div className="p-4 space-y-3">
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                      <div>
+                        <p className="font-semibold">Guinness</p>
+                        <p className="text-sm text-gray-500">568ml Pint</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold">€5.80</span>
+                        <button className="w-8 h-8 bg-amber-600 text-white rounded-full text-lg">+</button>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                      <div>
+                        <p className="font-semibold">Heineken</p>
+                        <p className="text-sm text-gray-500">568ml Pint</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold">€5.50</span>
+                        <button className="w-8 h-8 bg-amber-600 text-white rounded-full text-lg">+</button>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                      <div>
+                        <p className="font-semibold">Tayto Crisps</p>
+                        <p className="text-sm text-gray-500">Cheese & Onion</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold">€1.50</span>
+                        <button className="w-8 h-8 bg-amber-600 text-white rounded-full text-lg">+</button>
+                      </div>
+                    </div>
+                  </div>
+                  {/* Cart footer */}
+                  <div className="p-4 border-t">
+                    <button className="w-full py-3 bg-amber-600 text-white rounded-xl font-semibold">
+                      View Cart (2 items) — €11.30
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials */}
+      <section className="py-20 px-4 bg-white">
+        <div className="max-w-6xl mx-auto">
+          <h2 className="text-3xl font-bold text-warm-brown text-center mb-12">
+            Trusted by Pubs Across Ireland
+          </h2>
+          
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="p-6 bg-amber-50 rounded-2xl">
+              <div className="flex items-center gap-1 mb-4">
+                {[...Array(5)].map((_, i) => (
+                  <span key={i} className="text-amber-500">★</span>
+                ))}
+              </div>
+              <p className="text-muted-foreground mb-4 italic">
+                "Busy Friday nights used to be chaos. Now customers order from their phones and we just focus on pouring. Orders up 20% since we started."
+              </p>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-amber-200 rounded-full flex items-center justify-center font-semibold text-amber-700">PK</div>
+                <div>
+                  <p className="font-semibold text-warm-brown">Paddy Kelly</p>
+                  <p className="text-sm text-muted-foreground">The Local, Dublin</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="p-6 bg-amber-50 rounded-2xl">
+              <div className="flex items-center gap-1 mb-4">
+                {[...Array(5)].map((_, i) => (
+                  <span key={i} className="text-amber-500">★</span>
+                ))}
+              </div>
+              <p className="text-muted-foreground mb-4 italic">
+                "Setup took 10 minutes. Printed the QR codes, stuck them on the tables, done. Customers figured it out immediately."
+              </p>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-amber-200 rounded-full flex items-center justify-center font-semibold text-amber-700">MO</div>
+                <div>
+                  <p className="font-semibold text-warm-brown">Mary O'Brien</p>
+                  <p className="text-sm text-muted-foreground">Sláinte Bar, Cork</p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="p-6 bg-amber-50 rounded-2xl">
+              <div className="flex items-center gap-1 mb-4">
+                {[...Array(5)].map((_, i) => (
+                  <span key={i} className="text-amber-500">★</span>
+                ))}
+              </div>
+              <p className="text-muted-foreground mb-4 italic">
+                "My staff love it. Less running around taking orders means they can actually chat with regulars. The atmosphere is better."
+              </p>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-amber-200 rounded-full flex items-center justify-center font-semibold text-amber-700">SO</div>
+                <div>
+                  <p className="font-semibold text-warm-brown">Seamus O'Connell</p>
+                  <p className="text-sm text-muted-foreground">The Thatch, Galway</p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
