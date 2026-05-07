@@ -1,5 +1,47 @@
 -- BarTab Database Schema
 -- Pub ordering system
+--
+-- ============================================================================
+-- SECURITY REVIEW (TODO before launch — needs a real Supabase project to test)
+-- ============================================================================
+-- The current RLS policies are MVP-permissive. Before going to production:
+--
+-- 1. "Public can read own orders" (line ~93) currently uses USING (true).
+--    Anyone with the anon key can read every pub's orders, including totals
+--    and notes. Tighten to only allow reading orders matching the caller's
+--    session_token cookie. Suggested approach: use request.headers JSON via
+--    `current_setting('request.headers', true)::json` and parse the
+--    `bartab_session` cookie. Alternatively, remove the public SELECT policy
+--    and route order lookups through a SECURITY DEFINER Postgres function
+--    that takes session_token as an argument.
+--
+-- 2. "Public can create orders" uses WITH CHECK (true). A malicious client
+--    could insert orders with a forged pub_id or table_id. Tighten with
+--    subquery validation:
+--      WITH CHECK (
+--        pub_id IN (SELECT id FROM public.pubs)
+--        AND (
+--          table_id IS NULL
+--          OR EXISTS (
+--            SELECT 1 FROM public.tables t
+--            WHERE t.id = table_id AND t.pub_id = orders.pub_id
+--          )
+--        )
+--      )
+--
+-- 3. orders.total is set client-side. The bar trusts what the customer
+--    sends. Move totalling to a Postgres trigger that recomputes from
+--    order_items × menu_items.price.
+--
+-- 4. confirmation_code (4-digit random) has no uniqueness constraint;
+--    collisions are inevitable. Either add UNIQUE(pub_id, confirmation_code)
+--    over a recent window, or generate sequentially per-pub.
+--
+-- 5. tables.qr_token and pubs are readable via USING (true). qr_token is a
+--    UUID so unguessable in practice, but you may want a per-pub view that
+--    exposes only ordering-relevant columns and hides phone/address until
+--    they're actually used.
+-- ============================================================================
 
 -- Pubs (the business)
 CREATE TABLE public.pubs (
