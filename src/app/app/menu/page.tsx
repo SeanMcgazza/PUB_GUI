@@ -397,13 +397,19 @@ function MenuItemRow({
         onCheckedChange={onToggle}
         aria-label={`Toggle ${item.name} availability`}
       />
-      <Button variant="ghost" size="icon" onClick={onEdit}>
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={onEdit}
+        aria-label={`Edit ${item.name}`}
+      >
         <Pencil className="w-4 h-4" />
       </Button>
       <Button
         variant="ghost"
         size="icon"
         onClick={onDelete}
+        aria-label={`Delete ${item.name}`}
         className="text-red-500 hover:text-red-600"
       >
         <Trash2 className="w-4 h-4" />
@@ -429,6 +435,17 @@ function ItemDialog({
   const [categoryId, setCategoryId] = useState(item?.category_id || '');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+
+  // Sync local form state when the `item` prop changes. Without this, opening
+  // the dialog for "Edit X" after first mount kept stale state (often empty)
+  // because useState's initializer only runs on first render.
+  useEffect(() => {
+    setName(item?.name || '');
+    setDescription(item?.description || '');
+    setPrice(item?.price?.toString() || '');
+    setCategoryId(item?.category_id || '');
+    setError('');
+  }, [item]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -596,6 +613,12 @@ function CategoryDialog({
   const [error, setError] = useState('');
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const supabase = createClient() as any;
+
+  // Sync local state when the category prop changes (edit-after-edit).
+  useEffect(() => {
+    setName(category?.name || '');
+    setError('');
+  }, [category]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

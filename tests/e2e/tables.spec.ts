@@ -65,4 +65,29 @@ test.describe('Tables management page', () => {
       page.getByText(/\/order\/the-local\//).first()
     ).toBeVisible({ timeout: 5000 });
   });
+
+  test('editing a table updates its name in the list', async ({ page }) => {
+    await page.goto('/app/tables');
+    await expect(page.getByText('Window Seat')).toBeVisible({ timeout: 5000 });
+
+    await page.getByRole('button', { name: 'Edit table 1' }).click();
+    await page.getByLabel(/Name \(optional\)/i).fill('Front Window');
+    await page.getByRole('button', { name: /^Save$/ }).click();
+
+    await expect(page.getByText('Front Window')).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText('Window Seat')).toHaveCount(0);
+  });
+
+  test('deleting a table removes it from the list', async ({ page }) => {
+    page.on('dialog', (d) => d.accept()); // confirm() prompt
+
+    await page.goto('/app/tables');
+    await expect(page.getByText('Window Seat')).toBeVisible({ timeout: 5000 });
+
+    await page.getByRole('button', { name: 'Delete table 1' }).click();
+
+    await expect(page.getByText('Window Seat')).toHaveCount(0, {
+      timeout: 5000,
+    });
+  });
 });

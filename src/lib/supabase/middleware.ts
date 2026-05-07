@@ -7,9 +7,7 @@ import { NextResponse, type NextRequest } from 'next/server';
  * this is a no-op pass-through so the customer ordering flow and the
  * demo-mode bar dashboard remain reachable without auth.
  *
- * NOTE: Next 16 is migrating from `middleware` → `proxy` as the file
- * convention. The current file name still works but emits a deprecation
- * warning. Rename to `src/proxy.ts` (or root `proxy.ts`) when convenient.
+ * Called from src/proxy.ts (Next 16's renamed `middleware` convention).
  */
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });

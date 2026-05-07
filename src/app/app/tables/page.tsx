@@ -330,6 +330,7 @@ export default function TablesPage() {
                   variant="ghost"
                   size="sm"
                   className="flex-1"
+                  aria-label={`Edit table ${table.number}`}
                   onClick={() => {
                     setEditingTable(table);
                     setShowDialog(true);
@@ -342,6 +343,7 @@ export default function TablesPage() {
                   variant="ghost"
                   size="sm"
                   className="flex-1 text-red-500 hover:text-red-600"
+                  aria-label={`Delete table ${table.number}`}
                   onClick={() => deleteTable(table.id)}
                 >
                   <Trash2 className="w-4 h-4 mr-1" />
@@ -416,14 +418,21 @@ function TableDialog({
   const [name, setName] = useState(table?.name || '');
   const [saving, setSaving] = useState(false);
 
-  // Auto-suggest next available number
+  // Sync form state when the `table` prop changes (edit-after-edit scenarios)
+  // and auto-suggest the next number for new tables.
   useEffect(() => {
-    if (!table && existingNumbers.length > 0) {
+    if (table) {
+      setNumber(table.number.toString());
+      setName(table.name || '');
+      return;
+    }
+    if (existingNumbers.length > 0) {
       const maxNum = Math.max(...existingNumbers);
       setNumber((maxNum + 1).toString());
-    } else if (!table) {
+    } else {
       setNumber('1');
     }
+    setName('');
   }, [table, existingNumbers]);
 
   const handleSubmit = async (e: React.FormEvent) => {

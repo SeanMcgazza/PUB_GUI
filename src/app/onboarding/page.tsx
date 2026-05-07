@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { isDemoMode } from '@/lib/demo-data';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -120,6 +121,23 @@ export default function OnboardingPage() {
     if (saving || saved) return;
     setSaving(true);
     setError('');
+
+    // Demo mode: simulate a successful save without persisting anywhere.
+    // The real persistence path requires a Supabase project + an authed user.
+    if (isDemoMode()) {
+      setSaved(true);
+      try {
+        const confettiModule = await import('canvas-confetti');
+        confettiModule.default({
+          particleCount: 100,
+          spread: 70,
+          origin: { y: 0.6 },
+        });
+      } catch {
+        // ignore confetti errors
+      }
+      return;
+    }
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
