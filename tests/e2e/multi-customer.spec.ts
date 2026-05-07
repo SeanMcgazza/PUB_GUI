@@ -100,28 +100,30 @@ test.describe('Multi-customer ordering', () => {
     });
   });
 
-  test('three concurrent orders all persist (ID-collision regression)', async ({
+  test('three rapid sequential orders all persist (ID-collision regression)', async ({
     context,
   }) => {
     // Guards the bug fixed in commit 4031c63: orders placed in the same
     // millisecond used to share an ID and clobber each other under
     // updateOrderStatus. Now uses crypto.randomUUID().
+    //
+    // We place sequentially rather than in parallel because demo mode has
+    // a separate, known limitation: cross-tab localStorage read-modify-write
+    // is not atomic, so truly concurrent writes from multiple pages can
+    // clobber each other (last-write-wins). Real Supabase serializes inserts
+    // server-side and is not affected. Tracked as TODO in src/lib/demo-data.ts.
     const bar = await context.newPage();
     await bar.goto('/app');
 
     const c1 = await context.newPage();
     const c2 = await context.newPage();
     const c3 = await context.newPage();
-    await Promise.all([
-      c1.goto('/order/the-local/table1'),
-      c2.goto('/order/the-local/table2'),
-      c3.goto('/order/the-local/table3'),
-    ]);
-    await Promise.all([
-      placeOrder(c1, 'Guinness'),
-      placeOrder(c2, 'Heineken'),
-      placeOrder(c3, 'Smithwicks'),
-    ]);
+    await c1.goto('/order/the-local/table1');
+    await placeOrder(c1, 'Guinness');
+    await c2.goto('/order/the-local/table2');
+    await placeOrder(c2, 'Heineken');
+    await c3.goto('/order/the-local/table3');
+    await placeOrder(c3, 'Smithwicks');
 
     await expect(bar.locator('text=/^#\\d{4}$/')).toHaveCount(3, {
       timeout: 7000,

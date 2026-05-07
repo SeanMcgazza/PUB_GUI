@@ -1,82 +1,82 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
+/**
+ * Refreshes the Supabase session at the edge and gates access to
+ * authenticated routes. In demo mode (no real Supabase URL configured)
+ * this is a no-op pass-through so the customer ordering flow and the
+ * demo-mode bar dashboard remain reachable without auth.
+ *
+ * NOTE: Next 16 is migrating from `middleware` → `proxy` as the file
+ * convention. The current file name still works but emits a deprecation
+ * warning. Rename to `src/proxy.ts` (or root `proxy.ts`) when convenient.
+ */
 export async function updateSession(request: NextRequest) {
-  const supabaseResponse = NextResponse.next({
-    request,
-  });
+  let supabaseResponse = NextResponse.next({ request });
 
-  // DEMO MODE: Always allow all routes - no auth checks
-  // When ready for production, remove this block
-  return supabaseResponse;
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  /* Production auth code - uncomment when Supabase is configured
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  // Demo mode - if env vars are missing or placeholders, skip auth check
-  const isDemoMode = !url || !key || url.includes('placeholder');
-  if (isDemoMode) {
+  // Demo mode: skip auth checks. Same logic as src/lib/demo-data.ts:isDemoMode().
+  const demo =
+    !supabaseUrl ||
+    !supabaseAnonKey ||
+    supabaseUrl.includes('placeholder');
+  if (demo) {
     return supabaseResponse;
   }
 
-  const supabase = createServerClient(
-    url,
-    key,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
-          );
-          supabaseResponse = NextResponse.next({
-            request,
-          });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
-          );
-        },
+  const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll();
       },
-    }
-  );
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value }) =>
+          request.cookies.set(name, value)
+        );
+        supabaseResponse = NextResponse.next({ request });
+        cookiesToSet.forEach(({ name, value, options }) =>
+          supabaseResponse.cookies.set(name, value, options)
+        );
+      },
+    },
+  });
 
-  // IMPORTANT: Do not write any logic between createServerClient and
-  // supabase.auth.getUser(). A simple mistake could make it very hard to debug
-  // issues with users being randomly logged out.
+  // IMPORTANT: do not insert any logic between createServerClient and
+  // supabase.auth.getUser(). The Supabase SSR client refreshes session
+  // cookies as a side effect of getUser(); intervening logic can desync
+  // the cookies and randomly log users out.
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Define public routes that don't require authentication
-  const isPublicRoute =
-    request.nextUrl.pathname === '/' ||
-    request.nextUrl.pathname === '/login' ||
-    request.nextUrl.pathname === '/signup' ||
-    request.nextUrl.pathname.startsWith('/auth/') ||
-    request.nextUrl.pathname.startsWith('/book/') ||
-    request.nextUrl.pathname.startsWith('/order/');
+  const { pathname } = request.nextUrl;
 
-  // If user is not authenticated and trying to access protected route
-  if (
-    !user &&
-    !isPublicRoute &&
-    (request.nextUrl.pathname.startsWith('/app') || request.nextUrl.pathname.startsWith('/onboarding'))
-  ) {
-    const url = request.nextUrl.clone();
-    url.pathname = '/login';
-    return NextResponse.redirect(url);
+  const isPublicRoute =
+    pathname === '/' ||
+    pathname === '/login' ||
+    pathname === '/signup' ||
+    pathname.startsWith('/auth/') ||
+    pathname.startsWith('/order/');
+
+  const isProtectedRoute =
+    pathname.startsWith('/app') || pathname.startsWith('/onboarding');
+
+  // Unauthenticated user hitting a protected route → /login.
+  if (!user && !isPublicRoute && isProtectedRoute) {
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = '/login';
+    return NextResponse.redirect(redirectUrl);
   }
 
-  // If user is authenticated and trying to access login/signup, redirect to app
-  if (user && (request.nextUrl.pathname === '/login' || request.nextUrl.pathname === '/signup')) {
-    const url = request.nextUrl.clone();
-    url.pathname = '/app';
-    return NextResponse.redirect(url);
+  // Authenticated user on /login or /signup → /app (let the layouts
+  // bounce them to /onboarding if needed).
+  if (user && (pathname === '/login' || pathname === '/signup')) {
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = '/app';
+    return NextResponse.redirect(redirectUrl);
   }
 
   return supabaseResponse;
-  */
 }

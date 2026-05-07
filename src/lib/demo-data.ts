@@ -1,5 +1,12 @@
 // Demo data for testing UI/UX without Supabase
 // Uses localStorage to sync state between bar app and customer app
+//
+// KNOWN LIMITATION (demo mode only): the read-modify-write pattern in
+// addOrder/updateOrderStatus/addItem is not atomic across tabs. Two pages
+// writing in true parallel can clobber each other (last-write-wins). Real
+// Supabase serializes INSERTs server-side and is not affected. Fix would be
+// to refresh from localStorage immediately before setItem, or use a Web Lock
+// (navigator.locks) where supported.
 
 export const DEMO_PUB = {
   id: 'demo-pub-id',
