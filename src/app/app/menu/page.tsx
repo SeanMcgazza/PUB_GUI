@@ -395,6 +395,7 @@ function MenuItemRow({
       <Switch
         checked={item.is_available}
         onCheckedChange={onToggle}
+        aria-label={`Toggle ${item.name} availability`}
       />
       <Button variant="ghost" size="icon" onClick={onEdit}>
         <Pencil className="w-4 h-4" />

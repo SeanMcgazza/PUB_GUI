@@ -600,6 +600,7 @@ export function OrderingClient({ pub, table, categories, menuItems: initialMenuI
                       <Button
                         variant="ghost"
                         size="icon"
+                        aria-label={`Decrease ${item.menuItem.name} quantity`}
                         className="h-9 w-9 rounded-xl bg-pub-dark hover:bg-pub-black text-cream border border-white/10"
                         onClick={() => removeFromCart(item.menuItem.id)}
                       >
@@ -610,6 +611,7 @@ export function OrderingClient({ pub, table, categories, menuItems: initialMenuI
                       </span>
                       <Button
                         size="icon"
+                        aria-label={`Increase ${item.menuItem.name} quantity`}
                         className="h-9 w-9 rounded-xl bg-amber-gradient text-white"
                         onClick={() => addToCart(item.menuItem)}
                       >
@@ -702,6 +704,7 @@ function MenuItemCard({
             <motion.button
               whileTap={{ scale: 0.9 }}
               onClick={onAdd}
+              aria-label={`Add ${item.name} to cart`}
               className="bg-amber-gradient text-white h-12 w-12 rounded-xl flex items-center justify-center glow-amber-sm"
             >
               <Plus className="w-5 h-5" />
@@ -711,6 +714,7 @@ function MenuItemCard({
               <motion.button
                 whileTap={{ scale: 0.9 }}
                 onClick={onRemove}
+                aria-label={`Remove one ${item.name}`}
                 className="h-10 w-10 rounded-lg bg-pub-card hover:bg-pub-card-hover text-cream flex items-center justify-center"
               >
                 <Minus className="w-4 h-4" />
@@ -719,6 +723,7 @@ function MenuItemCard({
               <motion.button
                 whileTap={{ scale: 0.9 }}
                 onClick={onAdd}
+                aria-label={`Add another ${item.name}`}
                 className="h-10 w-10 rounded-lg bg-amber-gradient text-white flex items-center justify-center"
               >
                 <Plus className="w-4 h-4" />

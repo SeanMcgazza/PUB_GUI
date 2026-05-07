@@ -396,6 +396,7 @@ function OrderCard({
             variant="outline"
             size="icon"
             onClick={() => onUpdateStatus(order.id, 'cancelled')}
+            aria-label={`Cancel order #${order.confirmation_code}`}
             className="text-red-500 hover:text-red-600 hover:bg-red-50"
           >
             <X className="w-4 h-4" />
