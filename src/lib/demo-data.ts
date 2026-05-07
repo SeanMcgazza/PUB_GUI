@@ -40,7 +40,7 @@ export const DEMO_CATEGORIES = [
 
 const DEFAULT_MENU_ITEMS = [
   // Draught Beer
-  { id: 'm1', pub_id: DEMO_PUB.id, category_id: 'cat1', name: 'Guinness', description: 'The black stuff. 568ml pint.', price: 5.80, is_available: true, image_url: null },
+  { id: 'm1', pub_id: DEMO_PUB.id, category_id: 'cat1', name: 'Guinness', description: 'The black stuff. 568ml pint.', price: 5.80, is_available: true, image_url: '/demo-menu/guinness.jpg' },
   { id: 'm2', pub_id: DEMO_PUB.id, category_id: 'cat1', name: 'Heineken', description: 'Crisp lager. 568ml pint.', price: 5.50, is_available: true, image_url: null },
   { id: 'm3', pub_id: DEMO_PUB.id, category_id: 'cat1', name: 'Smithwicks', description: 'Irish red ale. 568ml pint.', price: 5.20, is_available: true, image_url: null },
   { id: 'm4', pub_id: DEMO_PUB.id, category_id: 'cat1', name: 'Rockshore', description: 'Refreshing lager. 568ml pint.', price: 5.00, is_available: true, image_url: null },

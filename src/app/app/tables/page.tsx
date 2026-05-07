@@ -187,7 +187,7 @@ export default function TablesPage() {
         className="mb-6 flex items-center justify-between"
       >
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Tables</h1>
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground">Tables</h1>
           <p className="text-muted-foreground">
             {tables.length} table{tables.length !== 1 ? 's' : ''} configured
           </p>
@@ -232,10 +232,10 @@ export default function TablesPage() {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="text-center py-12 bg-white rounded-xl border"
+          className="text-center py-12 bg-card rounded-xl border"
         >
           <LayoutGrid className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
+          <h3 className="text-lg font-medium text-foreground mb-2">
             No tables yet
           </h3>
           <p className="text-muted-foreground mb-4">
@@ -259,11 +259,11 @@ export default function TablesPage() {
               key={table.id}
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="bg-white rounded-xl border p-4"
+              className="bg-card rounded-xl border p-4"
             >
               <div className="flex items-start justify-between mb-4">
                 <div>
-                  <h3 className="text-xl font-bold text-gray-900">
+                  <h3 className="text-xl font-bold text-foreground">
                     Table {table.number}
                   </h3>
                   {table.name && (
@@ -274,7 +274,7 @@ export default function TablesPage() {
                   className={cn(
                     'px-2 py-1 rounded-full text-xs font-medium',
                     table.status === 'available' && 'bg-green-100 text-green-700',
-                    table.status === 'occupied' && 'bg-gray-100 text-gray-700',
+                    table.status === 'occupied' && 'bg-[color:var(--theme-surface-elevated)] text-muted-foreground',
                     table.status === 'reserved' && 'bg-blue-100 text-blue-700'
                   )}
                 >
@@ -284,7 +284,7 @@ export default function TablesPage() {
 
               {/* Mini QR Preview */}
               <div
-                className="bg-gray-50 rounded-lg p-4 mb-4 cursor-pointer hover:bg-gray-100 transition-colors"
+                className="bg-[color:var(--theme-surface-card-hover)]/40 rounded-lg p-4 mb-4 cursor-pointer hover:bg-[color:var(--theme-surface-elevated)] transition-colors"
                 onClick={() => {
                   setSelectedTable(table);
                   setShowQrDialog(true);
@@ -366,7 +366,7 @@ export default function TablesPage() {
           </DialogHeader>
           {selectedTable && (
             <div className="text-center">
-              <div className="bg-white p-6 rounded-xl inline-block">
+              <div className="bg-card p-6 rounded-xl inline-block">
                 <QRCodeSVG
                   value={getOrderUrl(selectedTable)}
                   size={250}

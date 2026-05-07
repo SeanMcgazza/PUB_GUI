@@ -95,14 +95,14 @@ export default function OrdersPage() {
 
   const getStatusBadge = (status: string) => {
     const styles = {
-      pending: 'bg-gray-100 text-gray-700',
+      pending: 'bg-[color:var(--theme-surface-elevated)] text-muted-foreground',
       accepted: 'bg-blue-100 text-blue-700',
       preparing: 'bg-purple-100 text-purple-700',
       ready: 'bg-green-100 text-green-700',
-      collected: 'bg-gray-100 text-gray-700',
+      collected: 'bg-[color:var(--theme-surface-elevated)] text-muted-foreground',
       cancelled: 'bg-red-100 text-red-700',
     } as Record<string, string>;
-    return styles[status] || 'bg-gray-100 text-gray-700';
+    return styles[status] || 'bg-[color:var(--theme-surface-elevated)] text-muted-foreground';
   };
 
   // Calculate stats
@@ -123,7 +123,7 @@ export default function OrdersPage() {
         animate={{ opacity: 1, y: 0 }}
         className="mb-6"
       >
-        <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Order History</h1>
+        <h1 className="text-2xl md:text-3xl font-bold text-foreground">Order History</h1>
         <p className="text-muted-foreground">
           View and manage all orders
         </p>
@@ -131,19 +131,19 @@ export default function OrdersPage() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white rounded-xl border p-4">
+        <div className="bg-card rounded-xl border p-4">
           <p className="text-sm text-muted-foreground">Total Orders</p>
-          <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+          <p className="text-2xl font-bold text-foreground">{stats.total}</p>
         </div>
-        <div className="bg-white rounded-xl border p-4">
+        <div className="bg-card rounded-xl border p-4">
           <p className="text-sm text-muted-foreground">Revenue</p>
           <p className="text-2xl font-bold text-green-600">€{stats.revenue.toFixed(2)}</p>
         </div>
-        <div className="bg-white rounded-xl border p-4">
+        <div className="bg-card rounded-xl border p-4">
           <p className="text-sm text-muted-foreground">Completed</p>
-          <p className="text-2xl font-bold text-gray-900">{stats.completed}</p>
+          <p className="text-2xl font-bold text-foreground">{stats.completed}</p>
         </div>
-        <div className="bg-white rounded-xl border p-4">
+        <div className="bg-card rounded-xl border p-4">
           <p className="text-sm text-muted-foreground">Cancelled</p>
           <p className="text-2xl font-bold text-red-500">{stats.cancelled}</p>
         </div>
@@ -188,10 +188,10 @@ export default function OrdersPage() {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="text-center py-12 bg-white rounded-xl border"
+          className="text-center py-12 bg-card rounded-xl border"
         >
           <ClipboardList className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
+          <h3 className="text-lg font-medium text-foreground mb-2">
             No orders found
           </h3>
           <p className="text-muted-foreground">
@@ -201,10 +201,10 @@ export default function OrdersPage() {
           </p>
         </motion.div>
       ) : (
-        <div className="bg-white rounded-xl border overflow-hidden">
+        <div className="bg-card rounded-xl border overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50 border-b">
+              <thead className="bg-[color:var(--theme-surface-card-hover)]/40 border-b">
                 <tr>
                   <th className="px-4 py-3 text-left text-sm font-medium text-muted-foreground">
                     Order
@@ -231,7 +231,7 @@ export default function OrdersPage() {
                 {filteredOrders.map((order) => (
                   <Fragment key={order.id}>
                     <tr
-                      className="hover:bg-gray-50 cursor-pointer"
+                      className="hover:bg-[color:var(--theme-surface-card-hover)]/40 cursor-pointer"
                       onClick={() =>
                         setExpandedOrder(
                           expandedOrder === order.id ? null : order.id
@@ -239,7 +239,7 @@ export default function OrdersPage() {
                       }
                     >
                       <td className="px-4 py-3">
-                        <span className="font-mono font-bold text-gray-900">
+                        <span className="font-mono font-bold text-foreground">
                           #{order.confirmation_code}
                         </span>
                       </td>
@@ -278,9 +278,9 @@ export default function OrdersPage() {
                     </tr>
                     {expandedOrder === order.id && (
                       <tr>
-                        <td colSpan={7} className="px-4 py-4 bg-gray-50">
+                        <td colSpan={7} className="px-4 py-4 bg-[color:var(--theme-surface-card-hover)]/40">
                           <div className="space-y-2">
-                            <p className="text-sm font-medium text-gray-900">
+                            <p className="text-sm font-medium text-foreground">
                               Order Items:
                             </p>
                             {order.order_items.map((item) => (

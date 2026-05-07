@@ -74,7 +74,7 @@ export default function SettingsPage() {
         animate={{ opacity: 1, y: 0 }}
         className="mb-6"
       >
-        <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Settings</h1>
+        <h1 className="text-2xl md:text-3xl font-bold text-foreground">Settings</h1>
         <p className="text-muted-foreground">
           Manage your pub settings
         </p>
@@ -85,7 +85,7 @@ export default function SettingsPage() {
         <Card className="shadow-sm">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Building2 className="w-5 h-5 text-gray-700" />
+              <Building2 className="w-5 h-5 text-muted-foreground" />
               Pub Information
             </CardTitle>
             <CardDescription>
@@ -183,8 +183,8 @@ export default function SettingsPage() {
               </Button>
             </div>
             
-            <div className="mt-4 p-4 bg-gray-100 rounded-lg">
-              <p className="text-sm text-gray-800">
+            <div className="mt-4 p-4 bg-[color:var(--theme-surface-elevated)] rounded-lg">
+              <p className="text-sm text-muted-foreground">
                 <strong>💡 Tip:</strong> Go to Tables → Generate QR codes for each table, 
                 then print and place them on your tables. Customers scan to order!
               </p>
@@ -205,7 +205,7 @@ export default function SettingsPage() {
               <Input
                 value={pub?.slug || ''}
                 readOnly
-                className="font-mono text-sm bg-gray-50"
+                className="font-mono text-sm bg-[color:var(--theme-surface-card-hover)]/40"
               />
             </div>
             <p className="text-xs text-muted-foreground mt-2">

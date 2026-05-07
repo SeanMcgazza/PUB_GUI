@@ -1,20 +1,27 @@
 import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
+import { Inter, Lora } from 'next/font/google';
 import './globals.css';
 
-const geistSans = Geist({
-  variable: '--font-geist-sans',
+// Body / UI font — geometric sans-serif. Maps to var(--font-inter).
+const inter = Inter({
+  variable: '--font-inter',
   subsets: ['latin'],
+  display: 'swap',
 });
 
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
+// Heading font — high-contrast serif for the gastropub feel.
+// Maps to var(--font-lora).
+const lora = Lora({
+  variable: '--font-lora',
   subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  display: 'swap',
 });
 
 export const metadata: Metadata = {
   title: 'BarTab - QR Code Ordering for Pubs',
-  description: 'Turn your tables into ordering stations. Let customers scan, browse, and order directly from their phones.',
+  description:
+    'Turn your tables into ordering stations. Let customers scan, browse, and order directly from their phones.',
   icons: {
     icon: '/favicon.ico',
   },
@@ -27,7 +34,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <body className={`${inter.variable} ${lora.variable} antialiased`}>
         {children}
       </body>
     </html>

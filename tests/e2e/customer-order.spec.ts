@@ -71,8 +71,9 @@ test.describe('Customer ordering page', () => {
     await page.getByRole('button', { name: 'Add another Guinness' }).click();
     await page.getByRole('button', { name: 'Add another Guinness' }).click();
 
+    // Cart aria-label: "View order, 3 items, €17.40"
     await expect(
-      page.getByRole('button', { name: /View Order \(3 items\)/i })
+      page.getByRole('button', { name: /View order, 3 items/i })
     ).toBeVisible();
     await expect(
       page.getByRole('button', { name: /View Order/i })

@@ -168,8 +168,8 @@ export default function MenuPage() {
       >
         <div className="flex items-center justify-between mb-2">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Menu</h1>
-            <p className="text-gray-500">
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground">Menu</h1>
+            <p className="text-muted-foreground">
               {items.length} item{items.length !== 1 ? 's' : ''} in {categories.length} categor{categories.length !== 1 ? 'ies' : 'y'}
             </p>
           </div>
@@ -238,20 +238,20 @@ export default function MenuPage() {
       )}
 
       {loading ? (
-        <div className="text-center py-12 text-gray-500">
+        <div className="text-center py-12 text-muted-foreground">
           Loading menu...
         </div>
       ) : items.length === 0 ? (
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="text-center py-12 bg-white rounded-xl border"
+          className="text-center py-12 bg-card rounded-xl border"
         >
-          <UtensilsCrossed className="w-16 h-16 text-gray-500 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
+          <UtensilsCrossed className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-foreground mb-2">
             No menu items yet
           </h3>
-          <p className="text-gray-500 mb-4">
+          <p className="text-muted-foreground mb-4">
             Add your first menu item to get started
           </p>
           <Button
@@ -272,13 +272,13 @@ export default function MenuPage() {
               key={category.id}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-xl border overflow-hidden"
+              className="bg-card rounded-xl border overflow-hidden"
             >
-              <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b">
+              <div className="flex items-center justify-between px-4 py-3 bg-[color:var(--theme-surface-card-hover)]/40 border-b">
                 <div className="flex items-center gap-2">
-                  <GripVertical className="w-4 h-4 text-gray-500" />
-                  <h2 className="font-semibold text-gray-900">{category.name}</h2>
-                  <span className="text-sm text-gray-500">
+                  <GripVertical className="w-4 h-4 text-muted-foreground" />
+                  <h2 className="font-semibold text-foreground">{category.name}</h2>
+                  <span className="text-sm text-muted-foreground">
                     ({catItems.length})
                   </span>
                 </div>
@@ -317,7 +317,7 @@ export default function MenuPage() {
                   />
                 ))}
                 {catItems.length === 0 && (
-                  <div className="p-4 text-center text-gray-500 text-sm">
+                  <div className="p-4 text-center text-muted-foreground text-sm">
                     No items in this category
                   </div>
                 )}
@@ -329,10 +329,10 @@ export default function MenuPage() {
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="bg-white rounded-xl border overflow-hidden"
+              className="bg-card rounded-xl border overflow-hidden"
             >
-              <div className="px-4 py-3 bg-gray-50 border-b">
-                <h2 className="font-semibold text-gray-900">Uncategorized</h2>
+              <div className="px-4 py-3 bg-[color:var(--theme-surface-card-hover)]/40 border-b">
+                <h2 className="font-semibold text-foreground">Uncategorized</h2>
               </div>
               <div className="divide-y">
                 {uncategorizedItems.map((item) => (
@@ -370,11 +370,11 @@ function MenuItemRow({
   return (
     <div className={cn(
       'flex items-center gap-4 p-4',
-      !item.is_available && 'opacity-60 bg-gray-50'
+      !item.is_available && 'opacity-60 bg-[color:var(--theme-surface-card-hover)]/40'
     )}>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className="font-semibold text-gray-900">{item.name}</span>
+          <span className="font-semibold text-foreground">{item.name}</span>
           {!item.is_available && (
             <span className="px-2 py-0.5 bg-red-100 text-red-600 text-xs rounded font-medium">
               OFF
@@ -382,13 +382,13 @@ function MenuItemRow({
           )}
         </div>
         {item.description && (
-          <p className="text-sm text-gray-500 truncate">
+          <p className="text-sm text-muted-foreground truncate">
             {item.description}
           </p>
         )}
       </div>
       <div className="text-right">
-        <span className="font-bold text-gray-700">
+        <span className="font-bold text-muted-foreground">
           €{item.price.toFixed(2)}
         </span>
       </div>

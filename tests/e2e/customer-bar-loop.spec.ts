@@ -59,7 +59,7 @@ test.describe('Customer ↔ bar ↔ customer loop (demo mode)', () => {
     await bar.goto('/app');
     // Show all statuses so we can drive the order through every transition
     // without the default "Pending" filter hiding it after Accept.
-    await bar.getByRole('button', { name: /^All / }).click();
+    await bar.getByRole('button', { name: /^All\b/ }).click();
 
     await customer.goto('/order/the-local/table1');
     await placeGuinness(customer);

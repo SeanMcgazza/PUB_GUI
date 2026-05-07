@@ -3,207 +3,252 @@
 
 @custom-variant dark (&:is(.dark *));
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-outfit);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
-  --color-ring: var(--ring);
-  --color-input: var(--input);
-  --color-border: var(--border);
-  --color-destructive: var(--destructive);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-secondary: var(--secondary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-primary: var(--primary);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-popover: var(--popover);
-  --color-card-foreground: var(--card-foreground);
-  --color-card: var(--card);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --radius-2xl: calc(var(--radius) + 8px);
-  --radius-3xl: calc(var(--radius) + 12px);
-  --radius-4xl: calc(var(--radius) + 16px);
-  
-  /* BarTab Dark Pub Theme */
-  --color-pub-black: #0D0D0D;
-  --color-pub-dark: #1A1A1A;
-  --color-pub-card: #242424;
-  --color-pub-card-hover: #2E2E2E;
-  --color-amber: #D97706;
-  --color-amber-light: #F59E0B;
-  --color-amber-dark: #B45309;
-  --color-amber-glow: #FBBF24;
-  --color-cream: #FEF3C7;
-  --color-cream-light: #FFFBEB;
-  --color-wood: #78350F;
-  --color-wood-light: #92400E;
-}
-
+/* ============================================================================
+   BarTab Design Tokens — the "DNA"
+   These are the white-label-overridable CSS variables. Per-pub themes can
+   override any of these via inline style="--theme-primary: #..." on a wrapper.
+   Code MUST always reference var(--theme-...) instead of hard-coding values.
+   ============================================================================ */
 :root {
-  --radius: 0.75rem;
-  /* Dark pub theme as default */
-  --background: #0D0D0D;
-  --foreground: #FEF3C7;
-  --card: #1A1A1A;
-  --card-foreground: #FEF3C7;
-  --popover: #1A1A1A;
-  --popover-foreground: #FEF3C7;
-  --primary: #D97706;
-  --primary-foreground: #FFFFFF;
-  --secondary: #78350F;
-  --secondary-foreground: #FEF3C7;
-  --muted: #242424;
-  --muted-foreground: #A3A3A3;
-  --accent: #2E2E2E;
-  --accent-foreground: #FEF3C7;
-  --destructive: #DC2626;
-  --border: #333333;
-  --input: #333333;
-  --ring: #D97706;
-  --chart-1: #D97706;
-  --chart-2: #F59E0B;
-  --chart-3: #78350F;
-  --chart-4: #FBBF24;
-  --chart-5: #92400E;
-  --sidebar: #1A1A1A;
-  --sidebar-foreground: #FEF3C7;
-  --sidebar-primary: #D97706;
-  --sidebar-primary-foreground: #FFFFFF;
-  --sidebar-accent: #242424;
-  --sidebar-accent-foreground: #FEF3C7;
-  --sidebar-border: #333333;
-  --sidebar-ring: #D97706;
+  /* Brand */
+  --theme-primary: #D97706;          /* Copper Gold — CTAs, active states */
+  --theme-primary-glow: #F59E0B;     /* Lighter copper for hover/glow */
+  --theme-primary-deep: #B45309;     /* Darker copper for pressed states */
+
+  /* Surfaces */
+  --theme-surface-base: #0F1115;     /* Rich Charcoal — main bg */
+  --theme-surface-card: #1C1F26;     /* Glass Gray — menu items, cards */
+  --theme-surface-card-hover: #252934;
+  --theme-surface-elevated: #2A2F3A;
+
+  /* Status accents */
+  --theme-success: #10B981;          /* Emerald — Ready */
+  --theme-info: #3B82F6;             /* Blue — Accepted */
+  --theme-warn: #F59E0B;             /* Amber — Preparing */
+  --theme-danger: #EF4444;           /* Ruby — Cancelled / Error */
+
+  /* Text */
+  --theme-text-primary: #F5F5F5;     /* High-contrast white-ish */
+  --theme-text-muted: #A8B0BC;       /* Secondary text */
+  --theme-text-subtle: #6B7280;      /* Tertiary */
+
+  /* Glass / borders */
+  --theme-border-glass: rgba(255, 255, 255, 0.08);
+  --theme-border-strong: rgba(255, 255, 255, 0.16);
+
+  /* Shape */
+  --theme-radius: 1rem;              /* 16px uniform */
+  --theme-radius-sm: 0.625rem;       /* 10px for chips */
+  --theme-radius-lg: 1.5rem;         /* 24px for sheets */
+  --theme-blur: 12px;
+
+  /* Typography */
+  --theme-font-heading: var(--font-lora), Georgia, serif;
+  --theme-font-body: var(--font-inter), system-ui, sans-serif;
 }
 
-/* Light mode override for admin dashboard */
+/* Light-theme override for the bar staff app shell. The bar dashboard now uses
+   the dark "command center" look by default, but legacy admin surfaces can
+   opt back into a light surface via the .light class. */
 .light {
-  --background: #FFFFFF;
-  --foreground: #1a1a1a;
-  --card: #FFFFFF;
-  --card-foreground: #1a1a1a;
-  --popover: #FFFFFF;
-  --popover-foreground: #1a1a1a;
-  --muted: #F5F5F5;
-  --muted-foreground: #525252;
-  --accent: #F5F5F5;
-  --accent-foreground: #1a1a1a;
-  --border: #E5E5E5;
-  --input: #E5E5E5;
-  --primary: #B45309;
-  --primary-foreground: #FFFFFF;
+  --theme-surface-base: #FFFFFF;
+  --theme-surface-card: #FAFAFA;
+  --theme-surface-card-hover: #F5F5F5;
+  --theme-surface-elevated: #FFFFFF;
+  --theme-text-primary: #0F1115;
+  --theme-text-muted: #4B5563;
+  --theme-text-subtle: #9CA3AF;
+  --theme-border-glass: rgba(15, 17, 21, 0.08);
+  --theme-border-strong: rgba(15, 17, 21, 0.16);
+}
+
+/* ============================================================================
+   Tailwind v4 @theme bridge — exposes the design tokens as Tailwind utilities.
+   ============================================================================ */
+@theme inline {
+  --color-background: var(--theme-surface-base);
+  --color-foreground: var(--theme-text-primary);
+  --color-card: var(--theme-surface-card);
+  --color-card-foreground: var(--theme-text-primary);
+  --color-popover: var(--theme-surface-card);
+  --color-popover-foreground: var(--theme-text-primary);
+  --color-primary: var(--theme-primary);
+  --color-primary-foreground: #FFFFFF;
+  --color-secondary: var(--theme-surface-elevated);
+  --color-secondary-foreground: var(--theme-text-primary);
+  --color-muted: var(--theme-surface-card);
+  --color-muted-foreground: var(--theme-text-muted);
+  --color-accent: var(--theme-surface-card-hover);
+  --color-accent-foreground: var(--theme-text-primary);
+  --color-destructive: var(--theme-danger);
+  --color-border: var(--theme-border-glass);
+  --color-input: var(--theme-border-strong);
+  --color-ring: var(--theme-primary);
+
+  /* Bartab-specific aliases (kept for backwards compat with existing classes) */
+  --color-pub-black: var(--theme-surface-base);
+  --color-pub-dark: var(--theme-surface-card);
+  --color-pub-card: var(--theme-surface-card);
+  --color-pub-card-hover: var(--theme-surface-card-hover);
+  --color-amber: var(--theme-primary);
+  --color-amber-light: var(--theme-primary-glow);
+  --color-amber-dark: var(--theme-primary-deep);
+  --color-amber-glow: var(--theme-primary-glow);
+  --color-cream: var(--theme-text-primary);
+  --color-cream-light: #FFFBEB;
+  --color-warm-brown: var(--theme-primary-deep);
+  --color-sage: var(--theme-success);
+  --color-dusty-rose: var(--theme-danger);
+
+  --color-sidebar: var(--theme-surface-card);
+  --color-sidebar-foreground: var(--theme-text-primary);
+  --color-sidebar-primary: var(--theme-primary);
+  --color-sidebar-primary-foreground: #FFFFFF;
+  --color-sidebar-accent: var(--theme-surface-card-hover);
+  --color-sidebar-accent-foreground: var(--theme-text-primary);
+  --color-sidebar-border: var(--theme-border-glass);
+  --color-sidebar-ring: var(--theme-primary);
+
+  --radius: var(--theme-radius);
+  --radius-sm: calc(var(--theme-radius) - 6px);
+  --radius-md: calc(var(--theme-radius) - 4px);
+  --radius-lg: var(--theme-radius);
+  --radius-xl: calc(var(--theme-radius) + 4px);
+  --radius-2xl: calc(var(--theme-radius) + 8px);
+  --radius-3xl: calc(var(--theme-radius) + 12px);
+
+  --font-sans: var(--theme-font-body);
+  --font-serif: var(--theme-font-heading);
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
-  body {
-    @apply bg-background text-foreground;
-    font-family: var(--font-outfit), system-ui, sans-serif;
+  html, body {
+    background: var(--theme-surface-base);
+    color: var(--theme-text-primary);
+    font-family: var(--theme-font-body);
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, h4, h5, h6, .font-serif {
+    font-family: var(--theme-font-heading);
+    font-weight: 600;
+    letter-spacing: -0.01em;
   }
 }
 
-/* BarTab utility classes */
+/* ============================================================================
+   Utilities
+   ============================================================================ */
 @layer utilities {
-  .text-balance {
-    text-wrap: balance;
+  .text-balance { text-wrap: balance; }
+
+  /* Glass surfaces — used on headers, modals, the category dock */
+  .glass {
+    background: color-mix(in oklab, var(--theme-surface-card) 70%, transparent);
+    backdrop-filter: blur(var(--theme-blur)) saturate(140%);
+    -webkit-backdrop-filter: blur(var(--theme-blur)) saturate(140%);
+    border: 1px solid var(--theme-border-glass);
   }
-  
-  /* Glowing amber effect */
-  .glow-amber {
-    box-shadow: 0 0 20px rgba(217, 119, 6, 0.3), 0 0 40px rgba(217, 119, 6, 0.1);
+  .glass-strong {
+    background: color-mix(in oklab, var(--theme-surface-card) 88%, transparent);
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    border: 1px solid var(--theme-border-glass);
   }
-  
-  .glow-amber-sm {
-    box-shadow: 0 0 10px rgba(217, 119, 6, 0.2);
+
+  /* Subtle glass edge for cards */
+  .border-glass {
+    border: 1px solid var(--theme-border-glass);
   }
-  
+  .border-glass-strong {
+    border: 1px solid var(--theme-border-strong);
+  }
+
+  /* Glow effects driven by --theme-primary for white-label support */
+  .glow-primary {
+    box-shadow:
+      0 0 24px color-mix(in oklab, var(--theme-primary) 35%, transparent),
+      0 0 48px color-mix(in oklab, var(--theme-primary) 10%, transparent);
+  }
+  .glow-primary-sm {
+    box-shadow:
+      0 0 12px color-mix(in oklab, var(--theme-primary) 25%, transparent);
+  }
+  /* Legacy aliases */
+  .glow-amber { @apply glow-primary; }
+  .glow-amber-sm { @apply glow-primary-sm; }
+
   /* Card shadows for dark theme */
   .shadow-pub {
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 0 1px rgba(217, 119, 6, 0.1);
+    box-shadow:
+      0 4px 24px rgba(0, 0, 0, 0.45),
+      0 0 1px var(--theme-border-glass);
   }
-  
   .shadow-pub-lg {
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5), 0 0 2px rgba(217, 119, 6, 0.15);
+    box-shadow:
+      0 12px 36px rgba(0, 0, 0, 0.55),
+      0 0 1px var(--theme-border-strong);
   }
-  
+
   /* Gradient backgrounds */
   .bg-pub-gradient {
-    background: linear-gradient(180deg, #0D0D0D 0%, #1A1A1A 100%);
+    background: linear-gradient(180deg, var(--theme-surface-base) 0%, var(--theme-surface-card) 100%);
   }
-  
-  .bg-amber-gradient {
-    background: linear-gradient(135deg, #D97706 0%, #B45309 100%);
+  .bg-primary-gradient {
+    background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-primary-deep) 100%);
   }
-  
-  /* Text gradients */
-  .text-gradient-amber {
-    background: linear-gradient(135deg, #FBBF24 0%, #D97706 100%);
+  .bg-amber-gradient { @apply bg-primary-gradient; }
+
+  .text-gradient-primary {
+    background: linear-gradient(135deg, var(--theme-primary-glow) 0%, var(--theme-primary) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
-  
+  .text-gradient-amber { @apply text-gradient-primary; }
+
+  /* Atmospheric pub backdrop — used as the customer-page hero placeholder
+     until pubs upload their own image. */
+  .bg-atmosphere {
+    background:
+      radial-gradient(ellipse at 30% 20%, color-mix(in oklab, var(--theme-primary) 24%, transparent) 0%, transparent 55%),
+      radial-gradient(ellipse at 70% 80%, color-mix(in oklab, #5b1e00 35%, transparent) 0%, transparent 60%),
+      linear-gradient(160deg, #181b22 0%, #0F1115 100%);
+  }
+
   /* Pill button */
-  .btn-pill {
-    @apply rounded-full px-6 py-2.5;
-  }
-  
+  .btn-pill { @apply rounded-full px-6 py-2.5; }
+
   /* Scrollbar styling for dark theme */
-  .scrollbar-dark::-webkit-scrollbar {
-    width: 6px;
-  }
-  .scrollbar-dark::-webkit-scrollbar-track {
-    background: #1A1A1A;
-  }
-  .scrollbar-dark::-webkit-scrollbar-thumb {
-    background: #333333;
-    border-radius: 3px;
-  }
-  .scrollbar-dark::-webkit-scrollbar-thumb:hover {
-    background: #444444;
-  }
-  
+  .scrollbar-dark::-webkit-scrollbar { width: 6px; }
+  .scrollbar-dark::-webkit-scrollbar-track { background: var(--theme-surface-card); }
+  .scrollbar-dark::-webkit-scrollbar-thumb { background: var(--theme-border-strong); border-radius: 3px; }
+  .scrollbar-dark::-webkit-scrollbar-thumb:hover { background: var(--theme-text-subtle); }
+
   /* Hide scrollbar */
-  .scrollbar-hide {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
-  }
+  .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
 }
 
-/* Animation keyframes */
+/* ============================================================================
+   Animations
+   ============================================================================ */
 @keyframes pulse-glow {
-  0%, 100% {
-    box-shadow: 0 0 20px rgba(217, 119, 6, 0.3);
-  }
-  50% {
-    box-shadow: 0 0 30px rgba(217, 119, 6, 0.5);
-  }
+  0%, 100% { box-shadow: 0 0 20px color-mix(in oklab, var(--theme-primary) 30%, transparent); }
+  50%      { box-shadow: 0 0 32px color-mix(in oklab, var(--theme-primary) 50%, transparent); }
 }
+.animate-pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
 
-.animate-pulse-glow {
-  animation: pulse-glow 2s ease-in-out infinite;
+/* Urgency border pulse for stale orders on the bar dashboard */
+@keyframes urgency-amber {
+  0%, 100% { border-color: color-mix(in oklab, var(--theme-warn) 35%, transparent); }
+  50%      { border-color: color-mix(in oklab, var(--theme-warn) 90%, transparent); }
 }
+@keyframes urgency-red {
+  0%, 100% { border-color: color-mix(in oklab, var(--theme-danger) 50%, transparent); }
+  50%      { border-color: color-mix(in oklab, var(--theme-danger) 100%, transparent); }
+}
+.urgency-warn { animation: urgency-amber 1.6s ease-in-out infinite; }
+.urgency-danger { animation: urgency-red 1.2s ease-in-out infinite; }
