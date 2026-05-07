@@ -116,9 +116,17 @@ export function OrderingClient({ pub, table, categories, menuItems: initialMenuI
     checkExistingOrder();
   }, [sessionToken, pub.id, supabase]);
 
-  // Subscribe to order updates
+  // Subscribe to order updates (demo: localStorage events; production: Supabase realtime)
   useEffect(() => {
     if (!activeOrder) return;
+
+    if (isDemoMode()) {
+      const unsub = DemoOrdersState.subscribe((all) => {
+        const updated = all.find((o) => o.id === activeOrder.id);
+        if (updated) setActiveOrder(updated as unknown as Order);
+      });
+      return unsub;
+    }
 
     const channel = supabase
       .channel(`order-${activeOrder.id}`)

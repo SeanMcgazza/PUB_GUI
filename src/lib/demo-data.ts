@@ -313,13 +313,10 @@ export const DEMO_ORDERS = [
   },
 ];
 
-// Check if we're in demo mode
+// Demo mode = no real Supabase URL configured.
+// NEXT_PUBLIC_* env vars are inlined at build time, so this works identically
+// on server and client.
 export const isDemoMode = () => {
-  if (typeof window === 'undefined') {
-    // Server-side: check env
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    return !url || url.includes('placeholder');
-  }
-  // Client-side: always true for now (no real Supabase connected)
-  return true;
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  return !url || url.includes('placeholder');
 };

@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { createClient } from '@/lib/supabase/client';
 import { usePub } from '@/hooks/usePub';
-import { DEMO_ORDERS, isDemoMode } from '@/lib/demo-data';
+import { DemoOrdersState, isDemoMode } from '@/lib/demo-data';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { Order, OrderItem, Table } from '@/types/database';
@@ -26,6 +26,8 @@ const statusFilters = [
   { key: 'ready', label: 'Ready', icon: Bell, color: 'bg-green-500' },
 ] as const;
 
+const ACTIVE_STATUSES = ['pending', 'accepted', 'preparing', 'ready'];
+
 export default function DashboardPage() {
   const { pub } = usePub();
   const [orders, setOrders] = useState<OrderWithDetails[]>([]);
@@ -33,13 +35,18 @@ export default function DashboardPage() {
   const [activeFilter, setActiveFilter] = useState<string | null>('pending');
   const [soundEnabled, setSoundEnabled] = useState(true);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  // Track active order count across demo subscription firings so we only chime on new orders.
+  const lastActiveCountRef = useRef<number>(-1);
 
   const fetchOrders = useCallback(async () => {
     if (!pub) return;
 
-    // Demo mode - use mock data
+    // Demo mode - read live demo orders (shared with customer ordering flow)
     if (isDemoMode()) {
-      setOrders(DEMO_ORDERS as unknown as OrderWithDetails[]);
+      const all = DemoOrdersState.getOrders();
+      const active = all.filter((o) => ACTIVE_STATUSES.includes(o.status));
+      setOrders(active as unknown as OrderWithDetails[]);
+      lastActiveCountRef.current = active.length;
       setLoading(false);
       return;
     }
@@ -67,6 +74,30 @@ export default function DashboardPage() {
   useEffect(() => {
     fetchOrders();
   }, [fetchOrders]);
+
+  // Demo realtime - subscribe to localStorage events fired by customer ordering
+  useEffect(() => {
+    if (!pub || !isDemoMode()) return;
+
+    const unsub = DemoOrdersState.subscribe((all) => {
+      const active = all.filter((o) => ACTIVE_STATUSES.includes(o.status));
+
+      // Chime only when a new active order appears (not on status updates).
+      if (
+        lastActiveCountRef.current >= 0 &&
+        active.length > lastActiveCountRef.current &&
+        soundEnabled &&
+        audioRef.current
+      ) {
+        audioRef.current.play().catch(() => {});
+      }
+      lastActiveCountRef.current = active.length;
+
+      setOrders(active as unknown as OrderWithDetails[]);
+    });
+
+    return unsub;
+  }, [pub, soundEnabled]);
 
   // Real-time subscription (skip in demo mode)
   useEffect(() => {
@@ -115,19 +146,10 @@ export default function DashboardPage() {
   }, [pub, soundEnabled, fetchOrders]);
 
   const updateOrderStatus = async (orderId: string, newStatus: string) => {
-    // Demo mode - update local state only
+    // Demo mode - persist via DemoOrdersState so the customer side sees the update.
+    // Local orders state will refresh via the demo subscription effect above.
     if (isDemoMode()) {
-      setOrders((prev) =>
-        prev.map((order) =>
-          order.id === orderId
-            ? { ...order, status: newStatus as Order['status'] }
-            : order
-        ).filter((order) => 
-          newStatus === 'collected' || newStatus === 'cancelled' 
-            ? order.id !== orderId 
-            : true
-        )
-      );
+      DemoOrdersState.updateOrderStatus(orderId, newStatus);
       return;
     }
 
