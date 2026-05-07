@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { usePub } from '@/hooks/usePub';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -24,8 +24,9 @@ export default function SettingsPage() {
     logo_url: pub?.logo_url || '',
   });
 
-  // Update form when pub loads
-  useState(() => {
+  // Sync form when pub finishes loading. Was previously useState(callback)
+  // which is a lazy initializer and runs only once on mount when pub is null.
+  useEffect(() => {
     if (pub) {
       setForm({
         name: pub.name || '',
@@ -34,7 +35,7 @@ export default function SettingsPage() {
         logo_url: pub.logo_url || '',
       });
     }
-  });
+  }, [pub]);
 
   const orderingUrl = typeof window !== 'undefined' && pub
     ? `${window.location.origin}/order/${pub.slug}`

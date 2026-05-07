@@ -54,7 +54,19 @@ export function usePub() {
 
   const updatePub = async (updates: Partial<Pub>) => {
     if (!pub) return;
-    
+
+    // Demo mode: DEMO_PUB is hardcoded and there's no backing store.
+    // Reflect the edit locally so the UI feels responsive; persist nothing.
+    if (isDemoMode()) {
+      const next = {
+        ...pub,
+        ...updates,
+        updated_at: new Date().toISOString(),
+      };
+      setPub(next);
+      return next;
+    }
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const supabase = createClient() as any;
     const { data, error: updateError } = await supabase

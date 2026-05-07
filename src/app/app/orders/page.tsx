@@ -1,14 +1,15 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { Fragment, useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { createClient } from '@/lib/supabase/client';
 import { usePub } from '@/hooks/usePub';
+import { DemoOrdersState, isDemoMode } from '@/lib/demo-data';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { Order, OrderItem, Table } from '@/types/database';
 import { format } from 'date-fns';
-import { 
+import {
   ClipboardList, Search, Filter, ChevronDown, ChevronUp
 } from 'lucide-react';
 
@@ -24,12 +25,25 @@ export default function OrdersPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as any;
 
   const fetchOrders = useCallback(async () => {
     if (!pub) return;
 
+    // Demo mode: read from the same localStorage source the customer
+    // ordering flow writes to. Filter by status client-side.
+    if (isDemoMode()) {
+      const all = DemoOrdersState.getOrders();
+      const filtered =
+        statusFilter === 'all'
+          ? all
+          : all.filter((o) => o.status === statusFilter);
+      setOrders(filtered as unknown as OrderWithDetails[]);
+      setLoading(false);
+      return;
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const supabase = createClient() as any;
     let query = supabase
       .from('orders')
       .select(`
@@ -51,11 +65,21 @@ export default function OrdersPage() {
       setOrders(data as OrderWithDetails[]);
     }
     setLoading(false);
-  }, [pub, statusFilter, supabase]);
+  }, [pub, statusFilter]);
 
   useEffect(() => {
     fetchOrders();
   }, [fetchOrders]);
+
+  // Demo mode: refresh history when DemoOrdersState updates (new orders or
+  // status changes from the customer/dashboard pages).
+  useEffect(() => {
+    if (!pub || !isDemoMode()) return;
+    const unsub = DemoOrdersState.subscribe(() => {
+      fetchOrders();
+    });
+    return unsub;
+  }, [pub, fetchOrders]);
 
   const filteredOrders = orders.filter((order) => {
     if (!searchQuery) return true;
@@ -205,9 +229,8 @@ export default function OrdersPage() {
               </thead>
               <tbody className="divide-y">
                 {filteredOrders.map((order) => (
-                  <>
+                  <Fragment key={order.id}>
                     <tr
-                      key={order.id}
                       className="hover:bg-gray-50 cursor-pointer"
                       onClick={() =>
                         setExpandedOrder(
@@ -254,7 +277,7 @@ export default function OrdersPage() {
                       </td>
                     </tr>
                     {expandedOrder === order.id && (
-                      <tr key={`${order.id}-details`}>
+                      <tr>
                         <td colSpan={7} className="px-4 py-4 bg-gray-50">
                           <div className="space-y-2">
                             <p className="text-sm font-medium text-gray-900">
@@ -285,7 +308,7 @@ export default function OrdersPage() {
                         </td>
                       </tr>
                     )}
-                  </>
+                  </Fragment>
                 ))}
               </tbody>
             </table>

@@ -35,9 +35,12 @@ export default function TablesPage() {
   const fetchTables = useCallback(async () => {
     if (!pub) return;
 
-    // Demo mode - use mock data
+    // Demo mode - seed from mock data on first load only; preserve any
+    // tables the user added in this session via TableDialog.
     if (isDemoMode()) {
-      setTables(DEMO_TABLES as unknown as Table[]);
+      setTables((prev) =>
+        prev.length === 0 ? (DEMO_TABLES as unknown as Table[]) : prev
+      );
       setLoading(false);
       return;
     }
@@ -203,10 +206,19 @@ export default function TablesPage() {
             pub={pub}
             table={editingTable}
             existingNumbers={tables.map((t) => t.number)}
+            onSaved={(saved, wasEditing) => {
+              if (wasEditing) {
+                setTables((prev) =>
+                  prev.map((t) => (t.id === saved.id ? saved : t))
+                );
+              } else {
+                setTables((prev) => [...prev, saved]);
+              }
+            }}
             onClose={() => {
               setShowDialog(false);
               setEditingTable(null);
-              fetchTables();
+              if (!isDemoMode()) fetchTables();
             }}
           />
         </Dialog>
@@ -391,18 +403,18 @@ function TableDialog({
   pub,
   table,
   existingNumbers,
+  onSaved,
   onClose,
 }: {
   pub: { id: string } | null;
   table: Table | null;
   existingNumbers: number[];
+  onSaved?: (saved: Table, wasEditing: boolean) => void;
   onClose: () => void;
 }) {
   const [number, setNumber] = useState(table?.number?.toString() || '');
   const [name, setName] = useState(table?.name || '');
   const [saving, setSaving] = useState(false);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const supabase = createClient() as any;
 
   // Auto-suggest next available number
   useEffect(() => {
@@ -419,7 +431,7 @@ function TableDialog({
     if (!pub || !number) return;
 
     const tableNumber = parseInt(number);
-    
+
     // Check for duplicate number (except when editing same table)
     if (existingNumbers.includes(tableNumber) && table?.number !== tableNumber) {
       alert(`Table ${tableNumber} already exists`);
@@ -428,11 +440,32 @@ function TableDialog({
 
     setSaving(true);
     try {
+      const qr_token = table?.qr_token || crypto.randomUUID();
+
+      // Demo mode: skip Supabase, return the saved table to the parent so
+      // it can update its local list. Demo additions are session-only.
+      if (isDemoMode()) {
+        const saved: Table = {
+          id: table?.id || crypto.randomUUID(),
+          pub_id: pub.id,
+          number: tableNumber,
+          name: name || null,
+          qr_token,
+          status: table?.status || 'available',
+          created_at: table?.created_at || new Date().toISOString(),
+        };
+        onSaved?.(saved, !!table);
+        onClose();
+        return;
+      }
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const supabase = createClient() as any;
       const data = {
         pub_id: pub.id,
         number: tableNumber,
         name: name || null,
-        qr_token: table?.qr_token || crypto.randomUUID(),
+        qr_token,
       };
 
       if (table) {
