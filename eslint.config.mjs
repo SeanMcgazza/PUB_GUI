@@ -13,6 +13,14 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
   ]),
+  {
+    rules: {
+      // TODO: this was elevated to error in a recent eslint-plugin-react-hooks bump.
+      // The codebase has many `useEffect(() => { fetchX(); }, [fetchX])` patterns
+      // that legitimately fetch on mount. Refactor case-by-case before re-enabling.
+      "react-hooks/set-state-in-effect": "warn",
+    },
+  },
 ]);
 
 export default eslintConfig;

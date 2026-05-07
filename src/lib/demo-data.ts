@@ -123,7 +123,7 @@ export const DemoMenuState = {
   // Add item
   addItem: (item: typeof DEFAULT_MENU_ITEMS[0]): typeof DEFAULT_MENU_ITEMS => {
     const items = DemoMenuState.getItems();
-    const newItem = { ...item, id: `m${Date.now()}` };
+    const newItem = { ...item, id: crypto.randomUUID() };
     const updated = [...items, newItem];
     DemoMenuState.saveItems(updated);
     return updated;
@@ -214,19 +214,19 @@ function addOrder(order: {
 }): DemoOrder {
   const orders = getOrders();
   const newOrder: DemoOrder = {
-    id: `o${Date.now()}`,
+    id: crypto.randomUUID(),
     pub_id: DEMO_PUB.id,
     table_id: order.table_id,
-    session_token: `sess${Date.now()}`,
+    session_token: crypto.randomUUID(),
     status: 'pending',
     confirmation_code: String(Math.floor(1000 + Math.random() * 9000)),
     total: order.total,
     notes: order.notes || '',
     created_at: new Date().toISOString(),
-    order_items: order.items.map((item, i) => {
+    order_items: order.items.map((item) => {
       const { id: _itemId, ...rest } = item;
       return {
-        id: `oi${Date.now()}-${i}`,
+        id: crypto.randomUUID(),
         ...rest,
       };
     }),

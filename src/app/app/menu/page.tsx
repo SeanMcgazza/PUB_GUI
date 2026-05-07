@@ -455,7 +455,7 @@ function ItemDialog({
           } as never);
         } else {
           DemoMenuState.addItem({
-            id: `m${Date.now()}`,
+            id: crypto.randomUUID(),
             pub_id: pub.id,
             name,
             description: description || null,
