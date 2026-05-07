@@ -17,14 +17,15 @@ export default async function OnboardingLayout({
     redirect('/login');
   }
 
-  // If user already completed onboarding (has a slug), skip to dashboard
-  const { data: profile } = await supabase
-    .from('profiles')
+  // If user already completed onboarding (has a pub with a slug), skip to dashboard
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: pub } = await (supabase as any)
+    .from('pubs')
     .select('slug')
-    .eq('id', user.id)
-    .single() as { data: { slug: string | null } | null };
+    .eq('owner_id', user.id)
+    .maybeSingle() as { data: { slug: string | null } | null };
 
-  if (profile?.slug) {
+  if (pub?.slug) {
     redirect('/app');
   }
 

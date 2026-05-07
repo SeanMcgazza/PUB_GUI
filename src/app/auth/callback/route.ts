@@ -10,17 +10,17 @@ export async function GET(request: Request) {
     const supabase = await createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
-      // Check if the user has completed onboarding (has a slug)
+      // Onboarding is complete when the user owns a pub with a slug set.
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        const { data: profile } = await supabase
-          .from('profiles')
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: pub } = await (supabase as any)
+          .from('pubs')
           .select('slug')
-          .eq('id', user.id)
-          .single() as { data: { slug: string | null } | null };
+          .eq('owner_id', user.id)
+          .maybeSingle() as { data: { slug: string | null } | null };
 
-        // Redirect to onboarding if no slug set (new user)
-        if (!profile?.slug) {
+        if (!pub?.slug) {
           return NextResponse.redirect(`${origin}/onboarding`);
         }
       }
