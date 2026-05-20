@@ -275,7 +275,7 @@ export default function OnboardingPage() {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
-        className="text-3xl md:text-4xl font-bold text-warm-brown mb-3 text-center"
+        className="text-3xl md:text-4xl font-bold text-foreground mb-3 text-center"
       >
         Welcome to BarTab
       </motion.h1>
@@ -309,7 +309,7 @@ export default function OnboardingPage() {
   const renderPubName = () => (
     <div className="min-h-screen flex flex-col items-center justify-center px-4">
       <div className="w-full max-w-lg">
-        <h2 className="text-2xl font-bold text-warm-brown mb-2 text-center">
+        <h2 className="text-2xl font-bold text-foreground mb-2 text-center">
           What&apos;s your pub called?
         </h2>
         <p className="text-muted-foreground text-center mb-8">
@@ -318,21 +318,21 @@ export default function OnboardingPage() {
 
         <div className="space-y-6 mb-8">
           <div>
-            <label className="block text-sm font-medium text-warm-brown mb-2">Pub Name</label>
+            <label className="block text-sm font-medium text-foreground mb-2">Pub Name</label>
             <Input
               value={pubName}
               onChange={(e) => handleNameChange(e.target.value)}
               placeholder="e.g. The Red Lion"
-              className="text-lg py-6 bg-white"
+              className="text-lg py-6 bg-card"
               autoFocus
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-warm-brown mb-2">
+            <label className="block text-sm font-medium text-foreground mb-2">
               Your ordering link
             </label>
-            <div className="flex items-center gap-2 p-3 bg-white rounded-xl border">
+            <div className="flex items-center gap-2 p-3 bg-card rounded-xl border">
               <ExternalLink className="w-4 h-4 text-muted-foreground shrink-0" />
               <span className="text-sm text-muted-foreground">bartab.app/order/</span>
               <input
@@ -373,10 +373,10 @@ export default function OnboardingPage() {
     <div className="min-h-screen flex flex-col items-center justify-center px-4">
       <div className="w-full max-w-lg">
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 bg-[color:var(--theme-primary)]/20 rounded-full flex items-center justify-center mx-auto mb-4">
             <QrCode className="w-8 h-8 text-amber-600" />
           </div>
-          <h2 className="text-2xl font-bold text-warm-brown mb-2">
+          <h2 className="text-2xl font-bold text-foreground mb-2">
             How many tables do you have?
           </h2>
           <p className="text-muted-foreground">
@@ -437,10 +437,10 @@ export default function OnboardingPage() {
     <div className="min-h-screen flex flex-col items-center justify-center px-4 py-12">
       <div className="w-full max-w-lg">
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 bg-[color:var(--theme-primary)]/20 rounded-full flex items-center justify-center mx-auto mb-4">
             <UtensilsCrossed className="w-8 h-8 text-amber-600" />
           </div>
-          <h2 className="text-2xl font-bold text-warm-brown mb-2">
+          <h2 className="text-2xl font-bold text-foreground mb-2">
             What do you serve?
           </h2>
           <p className="text-muted-foreground">
@@ -458,14 +458,14 @@ export default function OnboardingPage() {
                 className={cn(
                   'p-4 rounded-2xl border-2 flex flex-col items-center gap-2 transition-all',
                   isSelected
-                    ? 'border-amber-600 bg-amber-50 shadow'
-                    : 'border-gray-200 bg-white hover:border-amber-300'
+                    ? 'border-[color:var(--theme-primary)] bg-[color:var(--theme-primary)]/15 shadow'
+                    : 'border-glass bg-card hover:border-[color:var(--theme-primary)]/60'
                 )}
               >
                 <span className="text-3xl">{cat.emoji}</span>
                 <span className={cn(
                   'text-sm font-medium',
-                  isSelected ? 'text-amber-600' : 'text-warm-brown'
+                  isSelected ? 'text-amber-600' : 'text-foreground'
                 )}>
                   {cat.name}
                 </span>
@@ -515,21 +515,21 @@ export default function OnboardingPage() {
               animate={{ scale: 1, opacity: 1 }}
               className="mb-8"
             >
-              <div className="w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center mx-auto">
+              <div className="w-20 h-20 bg-[color:var(--theme-primary)]/20 rounded-full flex items-center justify-center mx-auto">
                 <Loader2 className="w-10 h-10 text-amber-600 animate-spin" />
               </div>
             </motion.div>
-            <h2 className="text-2xl font-bold text-warm-brown mb-2">Setting up your pub...</h2>
+            <h2 className="text-2xl font-bold text-foreground mb-2">Setting up your pub...</h2>
             <p className="text-muted-foreground">
               Creating your menu, tables, and QR codes
             </p>
           </>
         ) : error ? (
           <>
-            <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <div className="w-20 h-20 bg-[color:var(--theme-danger)]/15 rounded-full flex items-center justify-center mx-auto mb-6">
               <span className="text-3xl">😥</span>
             </div>
-            <h2 className="text-2xl font-bold text-warm-brown mb-2">Something went wrong</h2>
+            <h2 className="text-2xl font-bold text-foreground mb-2">Something went wrong</h2>
             <p className="text-muted-foreground mb-4">{error}</p>
             <Button
               onClick={() => {
@@ -553,18 +553,18 @@ export default function OnboardingPage() {
               transition={{ type: 'spring', stiffness: 200 }}
               className="mb-8"
             >
-              <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto">
-                <Check className="w-10 h-10 text-green-500" />
+              <div className="w-20 h-20 bg-[color:var(--theme-success)]/15 rounded-full flex items-center justify-center mx-auto">
+                <Check className="w-10 h-10 text-[color:var(--theme-success)]" />
               </div>
             </motion.div>
 
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-              <h2 className="text-3xl font-bold text-warm-brown mb-2">You&apos;re all set! 🎉</h2>
+              <h2 className="text-3xl font-bold text-foreground mb-2">You&apos;re all set! 🎉</h2>
               <p className="text-muted-foreground mb-8">
-                <strong className="text-warm-brown">{pubName}</strong> is ready to take orders.
+                <strong className="text-foreground">{pubName}</strong> is ready to take orders.
               </p>
 
-              <div className="bg-white rounded-2xl border p-6 mb-8 shadow">
+              <div className="bg-card rounded-2xl border p-6 mb-8 shadow">
                 <p className="text-sm text-muted-foreground mb-3">Your ordering page</p>
                 <div className="flex items-center justify-center gap-2 mb-4">
                   <ExternalLink className="w-4 h-4 text-amber-600" />
@@ -580,7 +580,7 @@ export default function OnboardingPage() {
                 >
                   {copied ? (
                     <>
-                      <Check className="w-4 h-4 mr-1 text-green-500" />
+                      <Check className="w-4 h-4 mr-1 text-[color:var(--theme-success)]" />
                       Copied!
                     </>
                   ) : (
@@ -592,19 +592,19 @@ export default function OnboardingPage() {
                 </Button>
               </div>
 
-              <div className="bg-gray-50 rounded-2xl p-4 mb-8 text-left">
-                <p className="text-sm font-medium text-warm-brown mb-3">What we set up:</p>
+              <div className="bg-card border-glass rounded-2xl p-4 mb-8 text-left">
+                <p className="text-sm font-medium text-foreground mb-3">What we set up:</p>
                 <div className="space-y-2 text-sm text-muted-foreground">
                   <div className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-green-500 shrink-0" />
+                    <Check className="w-4 h-4 text-[color:var(--theme-success)] shrink-0" />
                     <span>{pubName} profile with ordering link</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-green-500 shrink-0" />
+                    <Check className="w-4 h-4 text-[color:var(--theme-success)] shrink-0" />
                     <span>{tableCount} tables with unique QR codes</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-green-500 shrink-0" />
+                    <Check className="w-4 h-4 text-[color:var(--theme-success)] shrink-0" />
                     <span>
                       {selectedCategories.length} menu categories with{' '}
                       {selectedCategories.reduce((sum, cat) => sum + (defaultMenuItems[cat]?.length || 0), 0)}{' '}
@@ -640,10 +640,10 @@ export default function OnboardingPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-amber-50 to-white">
+    <div className="min-h-screen bg-atmosphere">
       {/* Progress bar */}
       {step > 0 && step < 4 && (
-        <div className="fixed top-0 left-0 right-0 h-1 bg-gray-200 z-50">
+        <div className="fixed top-0 left-0 right-0 h-1 bg-[color:var(--theme-surface-card)] z-50">
           <motion.div
             className="h-full bg-amber-600"
             animate={{ width: `${(step / (TOTAL_STEPS - 2)) * 100}%` }}

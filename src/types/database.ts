@@ -144,6 +144,7 @@ export interface Database {
           confirmation_code: string;
           total: number;
           notes: string | null;
+          cancel_reason: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -156,6 +157,7 @@ export interface Database {
           confirmation_code: string;
           total?: number;
           notes?: string | null;
+          cancel_reason?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -168,6 +170,7 @@ export interface Database {
           confirmation_code?: string;
           total?: number;
           notes?: string | null;
+          cancel_reason?: string | null;
           created_at?: string;
           updated_at?: string;
         };

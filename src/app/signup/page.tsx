@@ -70,12 +70,12 @@ export default function SignupPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-cream flex items-center justify-center p-4">
+      <div className="min-h-screen bg-atmosphere flex items-center justify-center p-4">
         <div className="w-full max-w-md text-center">
-          <div className="w-20 h-20 bg-sage/20 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Check className="w-10 h-10 text-sage" />
+          <div className="w-20 h-20 bg-[color:var(--theme-success)]/15 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Check className="w-10 h-10 text-[color:var(--theme-success)]" />
           </div>
-          <h1 className="text-2xl font-bold text-warm-brown mb-2">Check your email! 📧</h1>
+          <h1 className="text-2xl font-bold text-foreground mb-2">Check your email! 📧</h1>
           <p className="text-muted-foreground mb-6">
             We&apos;ve sent a confirmation link to <strong>{email}</strong>. 
             Click it to activate your account.
@@ -91,7 +91,7 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-cream flex items-center justify-center p-4">
+    <div className="min-h-screen bg-atmosphere flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
@@ -100,7 +100,7 @@ export default function SignupPage() {
               <Beer className="w-7 h-7 text-white" />
             </div>
           </Link>
-          <h1 className="text-2xl font-bold text-warm-brown mt-4">Create your pub</h1>
+          <h1 className="text-2xl font-bold text-foreground mt-4">Create your pub</h1>
           <p className="text-muted-foreground mt-1">Start taking orders in minutes</p>
         </div>
 
@@ -137,7 +137,7 @@ export default function SignupPage() {
                   />
                 </div>
                 {email.length > 0 && !validation.hasEmail && (
-                  <p className="text-sm text-dusty-rose mt-1 flex items-center gap-1">
+                  <p className="text-sm text-[color:var(--theme-danger)] mt-1 flex items-center gap-1">
                     <X className="w-3 h-3" /> Enter a valid email
                   </p>
                 )}
@@ -158,7 +158,7 @@ export default function SignupPage() {
                   />
                 </div>
                 {password.length > 0 && !validation.hasPassword && (
-                  <p className="text-sm text-dusty-rose mt-1 flex items-center gap-1">
+                  <p className="text-sm text-[color:var(--theme-danger)] mt-1 flex items-center gap-1">
                     <X className="w-3 h-3" /> At least 6 characters
                   </p>
                 )}
@@ -179,20 +179,20 @@ export default function SignupPage() {
                   />
                 </div>
                 {confirmPassword.length > 0 && !validation.passwordsMatch && (
-                  <p className="text-sm text-dusty-rose mt-1 flex items-center gap-1">
+                  <p className="text-sm text-[color:var(--theme-danger)] mt-1 flex items-center gap-1">
                     <X className="w-3 h-3" /> Passwords don&apos;t match
                   </p>
                 )}
                 {confirmPassword.length > 0 && validation.passwordsMatch && (
-                  <p className="text-sm text-sage mt-1 flex items-center gap-1">
+                  <p className="text-sm text-[color:var(--theme-success)] mt-1 flex items-center gap-1">
                     <Check className="w-3 h-3" /> Passwords match
                   </p>
                 )}
               </div>
 
               {error && (
-                <div className="p-3 bg-dusty-rose/10 border border-dusty-rose/20 rounded-lg">
-                  <p className="text-sm text-dusty-rose">{error}</p>
+                <div className="p-3 bg-[color:var(--theme-danger)]/10 border border-[color:var(--theme-danger)]/30 rounded-lg">
+                  <p className="text-sm text-[color:var(--theme-danger)]">{error}</p>
                 </div>
               )}
 

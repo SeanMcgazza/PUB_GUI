@@ -42,6 +42,10 @@ interface CartItem {
   notes?: string;
 }
 
+// Minimum order value to send to the bar. Below this, the Place Order button
+// is disabled and a hint is shown in the cart sheet. Per Q1.3 sign-off.
+const MIN_ORDER_VALUE = 5;
+
 interface Props {
   pub: Pub;
   table: Table;
@@ -259,8 +263,10 @@ export function OrderingClient({
   );
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
+  const belowMinimum = cartTotal < MIN_ORDER_VALUE;
+
   const submitOrder = async () => {
-    if (cart.length === 0) return;
+    if (cart.length === 0 || belowMinimum) return;
     setSubmitting(true);
     try {
       if (isDemoMode()) {
@@ -364,6 +370,13 @@ export function OrderingClient({
           color: 'text-emerald-300',
           bg: 'bg-emerald-400/10',
         };
+      case 'cancelled':
+        return {
+          icon: X,
+          label: 'Order cancelled',
+          color: 'text-red-300',
+          bg: 'bg-red-400/10',
+        };
       default:
         return {
           icon: Clock,
@@ -379,7 +392,9 @@ export function OrderingClient({
   // ==========================================================================
   if (
     activeOrder &&
-    ['pending', 'accepted', 'preparing', 'ready'].includes(activeOrder.status)
+    ['pending', 'accepted', 'preparing', 'ready', 'cancelled'].includes(
+      activeOrder.status
+    )
   ) {
     const statusInfo = getStatusInfo(activeOrder.status);
     const StatusIcon = statusInfo.icon;
@@ -453,6 +468,31 @@ export function OrderingClient({
               </motion.div>
             )}
 
+            {activeOrder.status === 'cancelled' && (
+              <motion.div
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                className="rounded-2xl p-5 mb-6 border-glass-strong"
+                style={{
+                  background:
+                    'color-mix(in oklab, var(--theme-danger) 12%, transparent)',
+                }}
+              >
+                <p className="text-red-300 font-medium text-lg mb-2">
+                  Sorry — your order was cancelled by the bar.
+                </p>
+                {activeOrder.cancel_reason && (
+                  <p className="text-sm text-[color:var(--theme-text-primary)] opacity-90">
+                    <span className="opacity-70">Reason:</span>{' '}
+                    {activeOrder.cancel_reason}
+                  </p>
+                )}
+                <p className="text-xs text-[color:var(--theme-text-muted)] mt-3">
+                  No charge — you can order again or speak to staff.
+                </p>
+              </motion.div>
+            )}
+
             <div className="rounded-2xl p-5 mb-6 border-glass bg-[color:var(--theme-surface-card)]/60">
               <p className="text-sm text-[color:var(--theme-text-muted)] mb-1">
                 Order Total
@@ -466,7 +506,9 @@ export function OrderingClient({
               onClick={() => setActiveOrder(null)}
               className="w-full border-glass-strong text-[color:var(--theme-text-primary)] py-6 text-lg rounded-2xl bg-[color:var(--theme-surface-card)]/60 hover:bg-[color:var(--theme-surface-card-hover)]"
             >
-              Order More Drinks
+              {activeOrder.status === 'cancelled'
+                ? 'Try Again'
+                : 'Order More Drinks'}
             </Button>
           </motion.div>
         </div>
@@ -722,7 +764,7 @@ export function OrderingClient({
               </div>
 
               <div className="p-5 border-t border-glass">
-                <div className="flex justify-between items-center mb-4">
+                <div className="flex justify-between items-center mb-3">
                   <span className="text-lg text-[color:var(--theme-text-muted)]">
                     Total
                   </span>
@@ -730,9 +772,15 @@ export function OrderingClient({
                     €{cartTotal.toFixed(2)}
                   </span>
                 </div>
+                {belowMinimum && cart.length > 0 && (
+                  <p className="text-sm text-[color:var(--theme-warn)] mb-3 text-center">
+                    Minimum order €{MIN_ORDER_VALUE.toFixed(2)} — add €
+                    {(MIN_ORDER_VALUE - cartTotal).toFixed(2)} more to place order
+                  </p>
+                )}
                 <Button
                   onClick={submitOrder}
-                  disabled={submitting || cart.length === 0}
+                  disabled={submitting || cart.length === 0 || belowMinimum}
                   className="w-full bg-primary-gradient hover:opacity-90 text-white py-6 text-lg font-semibold rounded-2xl glow-primary disabled:opacity-50"
                 >
                   {submitting ? (

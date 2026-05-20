@@ -176,9 +176,6 @@
     box-shadow:
       0 0 12px color-mix(in oklab, var(--theme-primary) 25%, transparent);
   }
-  /* Legacy aliases */
-  .glow-amber { @apply glow-primary; }
-  .glow-amber-sm { @apply glow-primary-sm; }
 
   /* Card shadows for dark theme */
   .shadow-pub {
@@ -199,7 +196,6 @@
   .bg-primary-gradient {
     background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-primary-deep) 100%);
   }
-  .bg-amber-gradient { @apply bg-primary-gradient; }
 
   .text-gradient-primary {
     background: linear-gradient(135deg, var(--theme-primary-glow) 0%, var(--theme-primary) 100%);
@@ -207,7 +203,6 @@
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
-  .text-gradient-amber { @apply text-gradient-primary; }
 
   /* Atmospheric pub backdrop — used as the customer-page hero placeholder
      until pubs upload their own image. */

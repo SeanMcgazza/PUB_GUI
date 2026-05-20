@@ -85,8 +85,14 @@ export default function TablesPage() {
   };
 
   const getOrderUrl = (table: Table) => {
-    if (typeof window === 'undefined') return '';
-    return `${window.location.origin}/order/${pub?.slug}/${table.qr_token}`;
+    // Prefer NEXT_PUBLIC_APP_URL when set — this is what makes QR codes
+    // resolvable from phones (the dev-only `localhost` from window.origin
+    // points at the scanning device, not the host). In production, set
+    // this env var to your real domain (e.g. https://bartab.app).
+    const base =
+      process.env.NEXT_PUBLIC_APP_URL ||
+      (typeof window !== 'undefined' ? window.location.origin : '');
+    return `${base}/order/${pub?.slug}/${table.qr_token}`;
   };
 
   const downloadQR = (table: Table) => {

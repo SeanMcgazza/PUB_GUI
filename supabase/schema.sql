@@ -65,7 +65,9 @@ CREATE TABLE public.tables (
   name text, -- e.g. "Window Booth", "Bar Stool 3"
   qr_token text UNIQUE NOT NULL, -- secret in QR code
   status text DEFAULT 'available' CHECK (status IN ('available', 'occupied', 'reserved')),
-  created_at timestamptz DEFAULT now()
+  created_at timestamptz DEFAULT now(),
+  -- Q3.3: two tables in the same pub can't share a number.
+  UNIQUE (pub_id, number)
 );
 
 -- Menu categories
@@ -100,6 +102,9 @@ CREATE TABLE public.orders (
   confirmation_code text NOT NULL, -- 4-digit code
   total numeric(10,2) DEFAULT 0,
   notes text,
+  -- Optional reason the bar provides when cancelling. Shown on the customer's
+  -- cancelled-order screen. Per Q2.2.
+  cancel_reason text,
   created_at timestamptz DEFAULT now(),
   updated_at timestamptz DEFAULT now()
 );
@@ -152,5 +157,27 @@ CREATE INDEX idx_orders_pub ON public.orders(pub_id);
 CREATE INDEX idx_orders_status ON public.orders(pub_id, status);
 CREATE INDEX idx_order_items_order ON public.order_items(order_id);
 
--- Enable realtime for orders
+-- Enable realtime for orders.
+-- REPLICA IDENTITY FULL is required for Supabase to broadcast UPDATE events
+-- with the new row payload. Without it, postgres_changes UPDATE events fire
+-- but the client only sees the old row, so the status-update loop breaks.
+ALTER TABLE public.orders REPLICA IDENTITY FULL;
 ALTER PUBLICATION supabase_realtime ADD TABLE public.orders;
+
+-- Q3.5: pubs.slug is immutable after creation. Old QR codes encode the slug,
+-- so changing it would silently break every printed QR. Enforce at the DB
+-- level so even direct REST API calls can't change it.
+CREATE OR REPLACE FUNCTION public.prevent_pub_slug_change()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW.slug IS DISTINCT FROM OLD.slug THEN
+    RAISE EXCEPTION 'pubs.slug is immutable after creation';
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS pubs_slug_immutable ON public.pubs;
+CREATE TRIGGER pubs_slug_immutable
+  BEFORE UPDATE ON public.pubs
+  FOR EACH ROW EXECUTE FUNCTION public.prevent_pub_slug_change();

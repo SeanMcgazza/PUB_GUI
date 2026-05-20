@@ -48,7 +48,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-cream flex items-center justify-center p-4">
+    <div className="min-h-screen bg-atmosphere flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
@@ -57,7 +57,7 @@ export default function LoginPage() {
               <Beer className="w-7 h-7 text-white" />
             </div>
           </Link>
-          <h1 className="text-2xl font-bold text-warm-brown mt-4">Welcome back</h1>
+          <h1 className="text-2xl font-bold text-foreground mt-4">Welcome back</h1>
           <p className="text-muted-foreground mt-1">Sign in to manage your pub</p>
         </div>
 
@@ -97,8 +97,8 @@ export default function LoginPage() {
               </div>
 
               {error && (
-                <div className="p-3 bg-dusty-rose/10 border border-dusty-rose/20 rounded-lg">
-                  <p className="text-sm text-dusty-rose">{error}</p>
+                <div className="p-3 bg-[color:var(--theme-danger)]/10 border border-[color:var(--theme-danger)]/30 rounded-lg">
+                  <p className="text-sm text-[color:var(--theme-danger)]">{error}</p>
                 </div>
               )}
 

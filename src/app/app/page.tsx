@@ -6,11 +6,18 @@ import { createClient } from '@/lib/supabase/client';
 import { usePub } from '@/hooks/usePub';
 import { DemoOrdersState, isDemoMode } from '@/lib/demo-data';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import type { Order, OrderItem, Table } from '@/types/database';
 import { formatDistanceToNow } from 'date-fns';
-import { 
-  Clock, Check, ChefHat, Bell, Package, X, 
+import {
+  Clock, Check, ChefHat, Bell, Package, X,
   Volume2, VolumeX, RefreshCw
 } from 'lucide-react';
 
@@ -28,6 +35,37 @@ const statusFilters = [
 
 const ACTIVE_STATUSES = ['pending', 'accepted', 'preparing', 'ready'];
 
+// Auto-cancel a pending order after this many minutes with no bar action.
+// Per Q2.3 sign-off.
+const AUTO_CANCEL_AFTER_MIN = 15;
+// Visual urgency thresholds (already used by OrderCard's border pulse).
+const URGENCY_WARN_MIN = 5;
+const URGENCY_DANGER_MIN = 10;
+
+// Play a short tone via Web Audio API. Used for distinct stale-alert chimes
+// without needing extra audio assets. Per Q2.5 sign-off.
+function playTone(frequency: number, duration = 0.25, volume = 0.25) {
+  if (typeof window === 'undefined') return;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const Ctx = window.AudioContext || (window as any).webkitAudioContext;
+    if (!Ctx) return;
+    const ctx = new Ctx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.type = 'sine';
+    osc.frequency.value = frequency;
+    gain.gain.setValueAtTime(volume, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+    osc.start();
+    osc.stop(ctx.currentTime + duration);
+  } catch {
+    // Audio context might not be ready (no user gesture yet) — silently no-op.
+  }
+}
+
 export default function DashboardPage() {
   const { pub } = usePub();
   const [orders, setOrders] = useState<OrderWithDetails[]>([]);
@@ -37,6 +75,15 @@ export default function DashboardPage() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   // Track active order count across demo subscription firings so we only chime on new orders.
   const lastActiveCountRef = useRef<number>(-1);
+  // Remember which order IDs we've already alerted on so chimes don't repeat
+  // every tick. Cleared when the order leaves the active list.
+  const alertedWarnRef = useRef<Set<string>>(new Set());
+  const alertedDangerRef = useRef<Set<string>>(new Set());
+  // Stable ref to the latest updateOrderStatus so the tick interval doesn't
+  // need it in deps (avoids re-creating the interval on every render).
+  const updateOrderStatusRef = useRef<
+    ((id: string, status: string, reason?: string) => void) | null
+  >(null);
 
   const fetchOrders = useCallback(async () => {
     if (!pub) return;
@@ -145,7 +192,70 @@ export default function DashboardPage() {
     };
   }, [pub, soundEnabled, fetchOrders]);
 
-  const updateOrderStatus = async (orderId: string, newStatus: string) => {
+  // Tick every 30s while the dashboard is open:
+  //   - Play a distinct chime when an order first crosses the 5-min ("warn")
+  //     and 10-min ("danger") thresholds (Q2.5).
+  //   - Auto-cancel pending orders older than 15 min (Q2.3 D).
+  useEffect(() => {
+    const tick = () => {
+      const activeIds = new Set<string>();
+      const now = Date.now();
+      for (const o of orders) {
+        activeIds.add(o.id);
+        if (!ACTIVE_STATUSES.includes(o.status)) continue;
+        const ageMs = now - new Date(o.created_at).getTime();
+        const ageMin = ageMs / 60_000;
+
+        // Auto-cancel: only orders still pending (not accepted/preparing —
+        // those are already in the bar's flow).
+        if (o.status === 'pending' && ageMin >= AUTO_CANCEL_AFTER_MIN) {
+          // Fire-and-forget; realtime will refresh the list.
+          updateOrderStatusRef.current?.(
+            o.id,
+            'cancelled',
+            `Auto-cancelled — no response within ${AUTO_CANCEL_AFTER_MIN} minutes.`
+          );
+          continue;
+        }
+
+        // Stale-alert chimes (only once per order per threshold).
+        if (
+          ageMin >= URGENCY_WARN_MIN &&
+          !alertedWarnRef.current.has(o.id)
+        ) {
+          alertedWarnRef.current.add(o.id);
+          if (soundEnabled) playTone(660, 0.22);
+        }
+        if (
+          ageMin >= URGENCY_DANGER_MIN &&
+          !alertedDangerRef.current.has(o.id)
+        ) {
+          alertedDangerRef.current.add(o.id);
+          if (soundEnabled) {
+            playTone(440, 0.25);
+            setTimeout(() => playTone(440, 0.25), 220);
+          }
+        }
+      }
+      // Clear remembered alerts for orders that have left the active list,
+      // so a later restart fires fresh.
+      for (const id of alertedWarnRef.current) {
+        if (!activeIds.has(id)) alertedWarnRef.current.delete(id);
+      }
+      for (const id of alertedDangerRef.current) {
+        if (!activeIds.has(id)) alertedDangerRef.current.delete(id);
+      }
+    };
+    tick(); // run immediately so just-loaded stale orders don't wait 30s
+    const id = setInterval(tick, 30_000);
+    return () => clearInterval(id);
+  }, [orders, soundEnabled]);
+
+  const updateOrderStatus = async (
+    orderId: string,
+    newStatus: string,
+    cancelReason?: string
+  ) => {
     // Demo mode - persist via DemoOrdersState so the customer side sees the update.
     // Local orders state will refresh via the demo subscription effect above.
     if (isDemoMode()) {
@@ -155,16 +265,26 @@ export default function DashboardPage() {
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const supabase = createClient() as any;
-    const { error } = await supabase
-      .from('orders')
-      .update({ status: newStatus, updated_at: new Date().toISOString() })
-      .eq('id', orderId);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const update: Record<string, any> = {
+      status: newStatus,
+      updated_at: new Date().toISOString(),
+    };
+    if (newStatus === 'cancelled' && cancelReason !== undefined) {
+      update.cancel_reason = cancelReason || null;
+    }
+
+    const { error } = await supabase.from('orders').update(update).eq('id', orderId);
 
     if (error) {
       console.error('Failed to update order:', error);
       alert('Failed to update order status');
     }
   };
+  // Keep the ref in sync so the tick interval always calls the latest.
+  useEffect(() => {
+    updateOrderStatusRef.current = updateOrderStatus;
+  });
 
   const filteredOrders = activeFilter
     ? orders.filter((o) => o.status === activeFilter)
@@ -324,8 +444,14 @@ function OrderCard({
   onUpdateStatus,
 }: {
   order: OrderWithDetails;
-  onUpdateStatus: (orderId: string, status: string) => void;
+  onUpdateStatus: (
+    orderId: string,
+    status: string,
+    cancelReason?: string
+  ) => void;
 }) {
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
   const statusConfig = {
     pending: {
       label: 'Pending',
@@ -480,7 +606,7 @@ function OrderCard({
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => onUpdateStatus(order.id, 'cancelled')}
+              onClick={() => setShowCancelDialog(true)}
               aria-label={`Cancel order #${order.confirmation_code}`}
               className="rounded-xl h-11 w-11 text-[color:var(--theme-danger)] hover:bg-[color:var(--theme-danger)]/10 border-glass"
             >
@@ -489,6 +615,54 @@ function OrderCard({
           )}
         </div>
       </div>
+
+      {/* Cancel confirmation dialog (Q2.1: require confirm, with optional reason). */}
+      <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              Cancel order #{order.confirmation_code}?
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-[color:var(--theme-text-muted)]">
+            The customer will see a cancellation notice on their screen.
+            This can&apos;t be undone.
+          </p>
+          <div className="mt-2">
+            <Label htmlFor={`cancel-reason-${order.id}`}>
+              Reason (optional, shown to the customer)
+            </Label>
+            <textarea
+              id={`cancel-reason-${order.id}`}
+              value={cancelReason}
+              onChange={(e) => setCancelReason(e.target.value)}
+              placeholder="e.g. We're out of Guinness, sorry"
+              className="w-full mt-1 p-3 rounded-xl resize-none h-20 border-glass bg-[color:var(--theme-surface-card)] text-[color:var(--theme-text-primary)] placeholder:text-[color:var(--theme-text-subtle)] focus:outline-none focus:border-[color:var(--theme-primary)]/50"
+            />
+          </div>
+          <div className="flex justify-end gap-2 pt-4">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowCancelDialog(false);
+                setCancelReason('');
+              }}
+            >
+              Keep Order
+            </Button>
+            <Button
+              onClick={() => {
+                onUpdateStatus(order.id, 'cancelled', cancelReason);
+                setShowCancelDialog(false);
+                setCancelReason('');
+              }}
+              className="bg-[color:var(--theme-danger)] hover:opacity-90 text-white"
+            >
+              Confirm Cancel
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </motion.div>
   );
 }

@@ -1,4 +1,10 @@
 import { defineConfig, devices } from '@playwright/test';
+import dotenv from 'dotenv';
+
+// Load .env.local for the Playwright runner so test files can read
+// NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY (Next.js loads
+// these automatically for the dev server, but the test process is separate).
+dotenv.config({ path: '.env.local' });
 
 const PORT = 3000;
 const BASE_URL = `http://localhost:${PORT}`;
