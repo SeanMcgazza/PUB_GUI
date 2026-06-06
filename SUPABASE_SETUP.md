@@ -72,8 +72,10 @@ DO $$ BEGIN
   ALTER TABLE public.tables
     ADD CONSTRAINT tables_pub_id_number_key UNIQUE (pub_id, number);
 EXCEPTION
-  WHEN duplicate_object THEN
-    RAISE NOTICE 'constraint tables_pub_id_number_key already exists, skipping';
+  -- duplicate_object catches the constraint itself; duplicate_table catches
+  -- its backing index (Postgres creates an index with the constraint name).
+  WHEN duplicate_object OR duplicate_table THEN
+    RAISE NOTICE 'constraint or backing index already exists, skipping';
 END $$;
 
 -- 2. orders.cancel_reason
