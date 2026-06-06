@@ -63,17 +63,26 @@ commit you cloned. If you ever rebuild from scratch:
 | 2026-06-06 | `supabase/schema.sql` at commit `a1e4d5e` | Initial schema — 6 tables, RLS, realtime |
 | 2026-06-06 | Post-`a1e4d5e` diff (see below) | UNIQUE(pub_id,number); orders.cancel_reason; REPLICA IDENTITY FULL; immutable slug trigger |
 
-### Post-`a1e4d5e` migration (idempotent)
+### Post-`a1e4d5e` migration (idempotent — safe to re-run)
 
 ```sql
-ALTER TABLE public.tables
-  ADD CONSTRAINT tables_pub_id_number_key UNIQUE (pub_id, number);
+-- 1. Tables: UNIQUE(pub_id, number). Wrapped in a DO block because Postgres
+--    has no "ADD CONSTRAINT IF NOT EXISTS" syntax.
+DO $$ BEGIN
+  ALTER TABLE public.tables
+    ADD CONSTRAINT tables_pub_id_number_key UNIQUE (pub_id, number);
+EXCEPTION
+  WHEN duplicate_object THEN
+    RAISE NOTICE 'constraint tables_pub_id_number_key already exists, skipping';
+END $$;
 
-ALTER TABLE public.orders
-  ADD COLUMN IF NOT EXISTS cancel_reason text;
+-- 2. orders.cancel_reason
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS cancel_reason text;
 
+-- 3. orders REPLICA IDENTITY FULL
 ALTER TABLE public.orders REPLICA IDENTITY FULL;
 
+-- 4. pubs.slug immutability trigger
 CREATE OR REPLACE FUNCTION public.prevent_pub_slug_change()
 RETURNS TRIGGER AS $$
 BEGIN
