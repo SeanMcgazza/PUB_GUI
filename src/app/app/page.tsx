@@ -192,6 +192,16 @@ export default function DashboardPage() {
     };
   }, [pub, soundEnabled, fetchOrders]);
 
+  // Polling fallback: re-fetch every 3 seconds in production mode regardless
+  // of whether the Realtime WebSocket is connected. Keeps the dashboard
+  // updating even on flaky Supabase free-tier Realtime. When Realtime IS
+  // working, it'll usually beat the poll by a few hundred ms.
+  useEffect(() => {
+    if (!pub || isDemoMode()) return;
+    const id = setInterval(fetchOrders, 3000);
+    return () => clearInterval(id);
+  }, [pub, fetchOrders]);
+
   // Tick every 30s while the dashboard is open:
   //   - Play a distinct chime when an order first crosses the 5-min ("warn")
   //     and 10-min ("danger") thresholds (Q2.5).

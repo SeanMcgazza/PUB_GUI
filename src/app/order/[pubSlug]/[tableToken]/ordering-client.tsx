@@ -222,6 +222,23 @@ export function OrderingClient({
     };
   }, [activeOrder, supabase]);
 
+  // Polling fallback: re-fetch the active order every 3 seconds in production
+  // mode so the customer screen keeps updating even when the Realtime
+  // WebSocket fails to deliver. Realtime stays the fast path; this is the
+  // safety net for flaky Supabase free-tier connections.
+  useEffect(() => {
+    if (!activeOrder || isDemoMode()) return;
+    const id = setInterval(async () => {
+      const { data } = await supabase
+        .from('orders')
+        .select('*')
+        .eq('id', activeOrder.id)
+        .single();
+      if (data) setActiveOrder(data as Order);
+    }, 3000);
+    return () => clearInterval(id);
+  }, [activeOrder, supabase]);
+
   const scrollToCategory = (categoryId: string) => {
     setActiveCategory(categoryId);
     categoryRefs.current[categoryId]?.scrollIntoView({
