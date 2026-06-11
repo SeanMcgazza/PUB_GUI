@@ -132,6 +132,9 @@ export function OrderingClient({
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [menuItems, setMenuItems] = useState<MenuItem[]>(initialMenuItems);
   const categoryRefs = useRef<Record<string, HTMLElement | null>>({});
+  // Track the previous order status so we can fire a notification only on
+  // status TRANSITIONS, not on every poll tick that re-confirms the same state.
+  const lastStatusRef = useRef<string | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const supabase = createClient() as any;
 
@@ -239,6 +242,98 @@ export function OrderingClient({
     return () => clearInterval(id);
   }, [activeOrder, supabase]);
 
+  // Status-change notifications: vibrate + chime + browser notification when
+  // the order moves between states. Particularly important for the "ready"
+  // transition so customers know to come collect even when their phone is
+  // pocketed and the tab is in the background.
+  useEffect(() => {
+    if (!activeOrder) {
+      lastStatusRef.current = null;
+      return;
+    }
+    const prev = lastStatusRef.current;
+    const curr = activeOrder.status;
+    lastStatusRef.current = curr;
+    // Skip the initial render (prev=null) — we only want to alert on a real
+    // transition, not when the page first loads with an in-flight order.
+    if (prev === null || prev === curr) return;
+
+    const isReady = curr === 'ready';
+    const isCancelled = curr === 'cancelled';
+    const isProgress = curr === 'accepted' || curr === 'preparing';
+
+    // Vibration pattern: a long burst on ready (impossible to miss in pocket),
+    // a short blip on progress updates, a sad double on cancel.
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      if (isReady) navigator.vibrate([300, 120, 300, 120, 500]);
+      else if (isCancelled) navigator.vibrate([400, 200, 400]);
+      else if (isProgress) navigator.vibrate(120);
+    }
+
+    // Web Audio chime — only on ready/cancelled (don't be noisy on progress).
+    if (typeof window !== 'undefined' && (isReady || isCancelled)) {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const Ctx = window.AudioContext || (window as any).webkitAudioContext;
+        if (Ctx) {
+          const ctx = new Ctx();
+          // Resume if a previous gesture (the Place Order tap) had suspended.
+          if (ctx.state === 'suspended') ctx.resume();
+          const pattern = isReady ? [880, 1100, 1320] : [440, 330];
+          pattern.forEach((freq, i) => {
+            setTimeout(() => {
+              const osc = ctx.createOscillator();
+              const gain = ctx.createGain();
+              osc.connect(gain);
+              gain.connect(ctx.destination);
+              osc.type = 'sine';
+              osc.frequency.value = freq;
+              gain.gain.setValueAtTime(0.3, ctx.currentTime);
+              gain.gain.exponentialRampToValueAtTime(
+                0.001,
+                ctx.currentTime + 0.35
+              );
+              osc.start();
+              osc.stop(ctx.currentTime + 0.35);
+            }, i * 180);
+          });
+        }
+      } catch {
+        // Audio context may be blocked; vibration + visual already cover.
+      }
+    }
+
+    // Browser notification — popup banner even when the tab isn't focused.
+    // Needs permission, which we request lazily on the Place Order tap.
+    if (
+      typeof window !== 'undefined' &&
+      'Notification' in window &&
+      Notification.permission === 'granted'
+    ) {
+      const title = isReady
+        ? '🎉 Your order is ready!'
+        : isCancelled
+        ? 'Order cancelled'
+        : curr === 'accepted'
+        ? 'Order confirmed'
+        : 'Order is being prepared';
+      const body = isReady
+        ? `${pub.name} — collect from the bar`
+        : isCancelled
+        ? activeOrder.cancel_reason || 'See the app for details'
+        : `${pub.name} — Table ${table.number}`;
+      try {
+        new Notification(title, {
+          body,
+          icon: pub.logo_url || '/favicon.ico',
+          tag: `bartab-${activeOrder.id}`, // collapses repeat notifications
+        });
+      } catch {
+        // Some browsers throw on this constructor outside a SW; ignore.
+      }
+    }
+  }, [activeOrder, pub.name, pub.logo_url, table.number]);
+
   const scrollToCategory = (categoryId: string) => {
     setActiveCategory(categoryId);
     categoryRefs.current[categoryId]?.scrollIntoView({
@@ -285,6 +380,20 @@ export function OrderingClient({
   const submitOrder = async () => {
     if (cart.length === 0 || belowMinimum) return;
     setSubmitting(true);
+    // Tap is a user gesture, so this is the moment we're allowed to ask for
+    // browser-notification permission. Granted → status-change alerts pop on
+    // the customer's lock screen even when the tab is backgrounded.
+    if (
+      typeof window !== 'undefined' &&
+      'Notification' in window &&
+      Notification.permission === 'default'
+    ) {
+      try {
+        Notification.requestPermission();
+      } catch {
+        // Older browsers may reject; visual + vibration still cover.
+      }
+    }
     try {
       if (isDemoMode()) {
         const order = DemoOrdersState.addOrder({
