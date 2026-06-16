@@ -33,6 +33,21 @@ const PLATFORM_FEE_CENTS = 0;
  * Returns: { clientSecret, paymentIntentId, amount }
  */
 export async function POST(request: NextRequest) {
+  // Wrap the whole handler so any unexpected throw returns a JSON error
+  // instead of an empty 500 body (which the client can't parse).
+  try {
+    return await handle(request);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Unknown server error';
+    console.error('payment-intent route crashed:', err);
+    return NextResponse.json(
+      { error: `Server error: ${msg}` },
+      { status: 500 }
+    );
+  }
+}
+
+async function handle(request: NextRequest) {
   if (!isStripeConfigured()) {
     return NextResponse.json(
       { error: 'Stripe is not configured on the server' },
@@ -79,6 +94,18 @@ export async function POST(request: NextRequest) {
   if (!pub.stripe_account_id) {
     return NextResponse.json(
       { error: 'This pub has not connected Stripe yet' },
+      { status: 400 }
+    );
+  }
+  // The pub started Stripe onboarding but hasn't finished — Stripe will
+  // reject paymentIntents.create with transfer_data to an account that
+  // can't accept charges. Return a friendly message instead of crashing.
+  if (!pub.stripe_charges_enabled) {
+    return NextResponse.json(
+      {
+        error:
+          "This pub hasn't completed Stripe onboarding yet. The owner needs to finish in /app/settings → Continue Stripe onboarding.",
+      },
       { status: 400 }
     );
   }
@@ -164,28 +191,45 @@ export async function POST(request: NextRequest) {
   );
 
   const stripe = getStripe();
-  const paymentIntent = await stripe.paymentIntents.create({
-    amount: amountCents,
-    currency: 'eur',
-    automatic_payment_methods: { enabled: true },
-    // Destination charge: pub receives the money, platform optionally takes a fee.
-    transfer_data: {
-      destination: pub.stripe_account_id,
-    },
-    application_fee_amount: PLATFORM_FEE_CENTS,
-    metadata: {
-      // Everything the webhook needs to construct the Order row.
-      pubId: pub.id,
-      pubSlug: pub.slug,
-      tableId: table.id,
-      sessionToken,
-      confirmationCode,
-      notes: notes || '',
-      // Items as JSON because metadata values are strings only.
-      items: JSON.stringify(validated),
-    },
-    description: `${pub.name} — Table ${table.number} — Order #${confirmationCode}`,
-  });
+  let paymentIntent;
+  try {
+    paymentIntent = await stripe.paymentIntents.create({
+      amount: amountCents,
+      currency: 'eur',
+      automatic_payment_methods: { enabled: true },
+      // Destination charge: pub receives the money, platform optionally takes a fee.
+      transfer_data: {
+        destination: pub.stripe_account_id,
+      },
+      application_fee_amount: PLATFORM_FEE_CENTS,
+      metadata: {
+        // Everything the webhook needs to construct the Order row.
+        pubId: pub.id,
+        pubSlug: pub.slug,
+        tableId: table.id,
+        sessionToken,
+        confirmationCode,
+        notes: notes || '',
+        // Items as JSON because metadata values are strings only.
+        items: JSON.stringify(validated),
+      },
+      description: `${pub.name} — Table ${table.number} — Order #${confirmationCode}`,
+    });
+  } catch (stripeErr) {
+    const msg =
+      stripeErr instanceof Error ? stripeErr.message : 'Stripe rejected the payment';
+    console.error('Stripe paymentIntents.create failed:', stripeErr);
+    return NextResponse.json(
+      {
+        error: `Could not create payment: ${msg}`,
+        // Hint for the common case: connected account not fully onboarded.
+        hint: msg.toLowerCase().includes('capabilit')
+          ? 'The pub needs to finish Stripe onboarding before accepting payments.'
+          : undefined,
+      },
+      { status: 400 }
+    );
+  }
 
   return NextResponse.json({
     clientSecret: paymentIntent.client_secret,
