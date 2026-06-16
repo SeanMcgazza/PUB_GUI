@@ -19,6 +19,8 @@ export interface Database {
           phone: string | null;
           logo_url: string | null;
           settings: Json;
+          stripe_account_id: string | null;
+          stripe_charges_enabled: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -31,6 +33,8 @@ export interface Database {
           phone?: string | null;
           logo_url?: string | null;
           settings?: Json;
+          stripe_account_id?: string | null;
+          stripe_charges_enabled?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -43,6 +47,8 @@ export interface Database {
           phone?: string | null;
           logo_url?: string | null;
           settings?: Json;
+          stripe_account_id?: string | null;
+          stripe_charges_enabled?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -145,6 +151,9 @@ export interface Database {
           total: number;
           notes: string | null;
           cancel_reason: string | null;
+          payment_intent_id: string | null;
+          payment_status: 'unpaid' | 'pending' | 'paid' | 'refunded' | 'failed';
+          paid_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -158,6 +167,9 @@ export interface Database {
           total?: number;
           notes?: string | null;
           cancel_reason?: string | null;
+          payment_intent_id?: string | null;
+          payment_status?: 'unpaid' | 'pending' | 'paid' | 'refunded' | 'failed';
+          paid_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -171,6 +183,9 @@ export interface Database {
           total?: number;
           notes?: string | null;
           cancel_reason?: string | null;
+          payment_intent_id?: string | null;
+          payment_status?: 'unpaid' | 'pending' | 'paid' | 'refunded' | 'failed';
+          paid_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };

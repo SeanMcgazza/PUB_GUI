@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { createClient } from '@/lib/supabase/client';
 import { DemoMenuState, DemoOrdersState, isDemoMode } from '@/lib/demo-data';
 import { themeStyleFromConfig } from '@/lib/theme';
+import { PaymentScreen } from './payment-screen';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type {
@@ -131,6 +132,10 @@ export function OrderingClient({
   const [orderNotes, setOrderNotes] = useState('');
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [menuItems, setMenuItems] = useState<MenuItem[]>(initialMenuItems);
+  // True once the customer has tapped Place Order and we've swapped the cart
+  // sheet over to the Stripe payment view. False in demo mode or before
+  // the customer has progressed past the cart.
+  const [showPayment, setShowPayment] = useState(false);
   const categoryRefs = useRef<Record<string, HTMLElement | null>>({});
   // Track the previous order status so we can fire a notification only on
   // status TRANSITIONS, not on every poll tick that re-confirms the same state.
@@ -379,7 +384,6 @@ export function OrderingClient({
 
   const submitOrder = async () => {
     if (cart.length === 0 || belowMinimum) return;
-    setSubmitting(true);
     // Tap is a user gesture, so this is the moment we're allowed to ask for
     // browser-notification permission. Granted → status-change alerts pop on
     // the customer's lock screen even when the tab is backgrounded.
@@ -394,8 +398,10 @@ export function OrderingClient({
         // Older browsers may reject; visual + vibration still cover.
       }
     }
-    try {
-      if (isDemoMode()) {
+    // Demo mode keeps the old instant-order flow (no Stripe, no payment).
+    if (isDemoMode()) {
+      setSubmitting(true);
+      try {
         const order = DemoOrdersState.addOrder({
           table_id: table.id,
           table_number: table.number,
@@ -414,49 +420,26 @@ export function OrderingClient({
         setCart([]);
         setOrderNotes('');
         setShowCart(false);
-        return;
+      } finally {
+        setSubmitting(false);
       }
-
-      const confirmationCode = String(
-        Math.floor(1000 + Math.random() * 9000)
-      );
-      const { data: order, error: orderError } = await supabase
-        .from('orders')
-        .insert({
-          pub_id: pub.id,
-          table_id: table.id,
-          session_token: sessionToken,
-          confirmation_code: confirmationCode,
-          total: cartTotal,
-          notes: orderNotes || null,
-        })
-        .select()
-        .single();
-      if (orderError) throw orderError;
-
-      const orderItems = cart.map((item) => ({
-        order_id: order.id,
-        menu_item_id: item.menuItem.id,
-        name: item.menuItem.name,
-        price: item.menuItem.price,
-        quantity: item.quantity,
-        notes: item.notes || null,
-      }));
-      const { error: itemsError } = await supabase
-        .from('order_items')
-        .insert(orderItems);
-      if (itemsError) throw itemsError;
-
-      setActiveOrder(order);
-      setCart([]);
-      setOrderNotes('');
-      setShowCart(false);
-    } catch (err) {
-      console.error('Order submission error:', err);
-      alert('Failed to submit order. Please try again.');
-    } finally {
-      setSubmitting(false);
+      return;
     }
+    // Production: swap the cart sheet to the Stripe payment view. The actual
+    // order row gets created server-side by the Stripe webhook after the
+    // payment succeeds, then PaymentScreen polls for it and hands it back
+    // via onPaid below.
+    setShowPayment(true);
+  };
+
+  // Called by PaymentScreen once Stripe has confirmed the payment AND the
+  // webhook has created the order row in Supabase.
+  const handlePaid = (order: Order) => {
+    setActiveOrder(order);
+    setCart([]);
+    setOrderNotes('');
+    setShowPayment(false);
+    setShowCart(false);
   };
 
   const availableItems = menuItems.filter((item) => item.is_available);
@@ -797,7 +780,9 @@ export function OrderingClient({
         onOpenCart={() => setShowCart(true)}
       />
 
-      {/* Cart sheet */}
+      {/* Cart sheet — when showPayment is true, the cart contents are swapped
+          out for the Stripe Payment Element. Closing the sheet from within
+          the payment view returns to the cart instead of dismissing entirely. */}
       <AnimatePresence>
         {showCart && (
           <>
@@ -806,7 +791,10 @@ export function OrderingClient({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40"
-              onClick={() => setShowCart(false)}
+              onClick={() => {
+                if (showPayment) setShowPayment(false);
+                else setShowCart(false);
+              }}
             />
             <motion.div
               initial={{ y: '100%' }}
@@ -822,103 +810,125 @@ export function OrderingClient({
                     <ShoppingCart className="w-5 h-5 text-white" />
                   </div>
                   <h2 className="font-serif text-xl text-[color:var(--theme-text-primary)]">
-                    Your Order
+                    {showPayment ? 'Payment' : 'Your Order'}
                   </h2>
                 </div>
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => setShowCart(false)}
+                  onClick={() => {
+                    if (showPayment) setShowPayment(false);
+                    else setShowCart(false);
+                  }}
                   className="text-[color:var(--theme-text-muted)] hover:bg-[color:var(--theme-surface-card-hover)]"
-                  aria-label="Close cart"
+                  aria-label={showPayment ? 'Back to cart' : 'Close cart'}
                 >
                   <X className="w-5 h-5" />
                 </Button>
               </div>
 
-              <div className="flex-1 overflow-auto p-4 space-y-3 scrollbar-dark">
-                {cart.map((item) => (
-                  <motion.div
-                    key={item.menuItem.id}
-                    layout
-                    className="flex items-center justify-between rounded-2xl p-4 border-glass bg-[color:var(--theme-surface-card)]"
-                  >
-                    <div className="flex-1">
-                      <p className="font-medium text-[color:var(--theme-text-primary)]">
-                        {item.menuItem.name}
-                      </p>
-                      <p className="text-sm text-[color:var(--theme-text-muted)]">
-                        €{item.menuItem.price.toFixed(2)} each
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        aria-label={`Decrease ${item.menuItem.name} quantity`}
-                        className="h-9 w-9 rounded-xl border-glass bg-[color:var(--theme-surface-base)]"
-                        onClick={() => removeFromCart(item.menuItem.id)}
-                      >
-                        <Minus className="w-4 h-4" />
-                      </Button>
-                      <span className="w-6 text-center font-bold text-lg text-[color:var(--theme-text-primary)]">
-                        {item.quantity}
-                      </span>
-                      <Button
-                        size="icon"
-                        aria-label={`Increase ${item.menuItem.name} quantity`}
-                        className="h-9 w-9 rounded-xl bg-primary-gradient text-white"
-                        onClick={() => addToCart(item.menuItem)}
-                      >
-                        <Plus className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </motion.div>
-                ))}
-
-                <div className="pt-2">
-                  <label className="block text-sm font-medium text-[color:var(--theme-text-muted)] mb-2">
-                    Notes for bar staff (optional)
-                  </label>
-                  <textarea
-                    value={orderNotes}
-                    onChange={(e) => setOrderNotes(e.target.value)}
-                    placeholder="Any special requests..."
-                    className="w-full p-4 rounded-2xl resize-none h-20 border-glass bg-[color:var(--theme-surface-card)] text-[color:var(--theme-text-primary)] placeholder:text-[color:var(--theme-text-subtle)] focus:outline-none focus:border-[color:var(--theme-primary)]/50"
+              {showPayment ? (
+                <div className="flex-1 overflow-auto scrollbar-dark">
+                  <PaymentScreen
+                    pub={pub}
+                    table={table}
+                    cart={cart}
+                    sessionToken={sessionToken}
+                    orderNotes={orderNotes}
+                    total={cartTotal}
+                    onCancel={() => setShowPayment(false)}
+                    onPaid={handlePaid}
                   />
                 </div>
-              </div>
+              ) : (
+                <>
+                  <div className="flex-1 overflow-auto p-4 space-y-3 scrollbar-dark">
+                    {cart.map((item) => (
+                      <motion.div
+                        key={item.menuItem.id}
+                        layout
+                        className="flex items-center justify-between rounded-2xl p-4 border-glass bg-[color:var(--theme-surface-card)]"
+                      >
+                        <div className="flex-1">
+                          <p className="font-medium text-[color:var(--theme-text-primary)]">
+                            {item.menuItem.name}
+                          </p>
+                          <p className="text-sm text-[color:var(--theme-text-muted)]">
+                            €{item.menuItem.price.toFixed(2)} each
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            aria-label={`Decrease ${item.menuItem.name} quantity`}
+                            className="h-9 w-9 rounded-xl border-glass bg-[color:var(--theme-surface-base)]"
+                            onClick={() => removeFromCart(item.menuItem.id)}
+                          >
+                            <Minus className="w-4 h-4" />
+                          </Button>
+                          <span className="w-6 text-center font-bold text-lg text-[color:var(--theme-text-primary)]">
+                            {item.quantity}
+                          </span>
+                          <Button
+                            size="icon"
+                            aria-label={`Increase ${item.menuItem.name} quantity`}
+                            className="h-9 w-9 rounded-xl bg-primary-gradient text-white"
+                            onClick={() => addToCart(item.menuItem)}
+                          >
+                            <Plus className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </motion.div>
+                    ))}
 
-              <div className="p-5 border-t border-glass">
-                <div className="flex justify-between items-center mb-3">
-                  <span className="text-lg text-[color:var(--theme-text-muted)]">
-                    Total
-                  </span>
-                  <span className="font-serif text-3xl text-gradient-primary">
-                    €{cartTotal.toFixed(2)}
-                  </span>
-                </div>
-                {belowMinimum && cart.length > 0 && (
-                  <p className="text-sm text-[color:var(--theme-warn)] mb-3 text-center">
-                    Minimum order €{MIN_ORDER_VALUE.toFixed(2)} — add €
-                    {(MIN_ORDER_VALUE - cartTotal).toFixed(2)} more to place order
-                  </p>
-                )}
-                <Button
-                  onClick={submitOrder}
-                  disabled={submitting || cart.length === 0 || belowMinimum}
-                  className="w-full bg-primary-gradient hover:opacity-90 text-white py-6 text-lg font-semibold rounded-2xl glow-primary disabled:opacity-50"
-                >
-                  {submitting ? (
-                    <>
-                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                      Placing Order...
-                    </>
-                  ) : (
-                    'Place Order'
-                  )}
-                </Button>
-              </div>
+                    <div className="pt-2">
+                      <label className="block text-sm font-medium text-[color:var(--theme-text-muted)] mb-2">
+                        Notes for bar staff (optional)
+                      </label>
+                      <textarea
+                        value={orderNotes}
+                        onChange={(e) => setOrderNotes(e.target.value)}
+                        placeholder="Any special requests..."
+                        className="w-full p-4 rounded-2xl resize-none h-20 border-glass bg-[color:var(--theme-surface-card)] text-[color:var(--theme-text-primary)] placeholder:text-[color:var(--theme-text-subtle)] focus:outline-none focus:border-[color:var(--theme-primary)]/50"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="p-5 border-t border-glass">
+                    <div className="flex justify-between items-center mb-3">
+                      <span className="text-lg text-[color:var(--theme-text-muted)]">
+                        Total
+                      </span>
+                      <span className="font-serif text-3xl text-gradient-primary">
+                        €{cartTotal.toFixed(2)}
+                      </span>
+                    </div>
+                    {belowMinimum && cart.length > 0 && (
+                      <p className="text-sm text-[color:var(--theme-warn)] mb-3 text-center">
+                        Minimum order €{MIN_ORDER_VALUE.toFixed(2)} — add €
+                        {(MIN_ORDER_VALUE - cartTotal).toFixed(2)} more to place order
+                      </p>
+                    )}
+                    <Button
+                      onClick={submitOrder}
+                      disabled={submitting || cart.length === 0 || belowMinimum}
+                      className="w-full bg-primary-gradient hover:opacity-90 text-white py-6 text-lg font-semibold rounded-2xl glow-primary disabled:opacity-50"
+                    >
+                      {submitting ? (
+                        <>
+                          <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                          Placing Order...
+                        </>
+                      ) : isDemoMode() ? (
+                        'Place Order'
+                      ) : (
+                        `Continue to Payment · €${cartTotal.toFixed(2)}`
+                      )}
+                    </Button>
+                  </div>
+                </>
+              )}
             </motion.div>
           </>
         )}
