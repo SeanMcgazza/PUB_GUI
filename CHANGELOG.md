@@ -4,6 +4,125 @@ Reverse-chronological log of substantive work done on this branch
 (`bartab-nextjs`) starting from baseline commit `128b1b7`. Each section
 captures: what was fixed/built, why, and how it was verified.
 
+---
+
+## Phase 3 — Deployment + Stripe Connect (2026-06-16)
+
+Single-day session that took BarTab from "code only" to a fully-functional
+QR ordering platform with end-to-end card payments routed to each pub's own
+Stripe account.
+
+### `6e34467` Force Vercel rebuild — invalidate stale lambdas
+
+Initial Vercel deployment had baked-in stale or swapped env vars; pushing
+an inert no-op change to `next.config.ts` forced a true fresh build that
+booted every serverless function with the current `NEXT_PUBLIC_SUPABASE_URL`
+/ `_ANON_KEY` values. Resolved the "/app pages show demo placeholders even
+when authenticated" problem.
+
+### `ed8d5eb` Add 3-second polling fallback for live updates
+
+Supabase free-tier Realtime occasionally drops the WebSocket; the bar
+dashboard (`/app`) and customer status screen (`/order/...`) now both
+re-fetch every 3 seconds in addition to listening on the Realtime channel.
+Worst-case latency drops from "manual refresh" to ≤3 seconds. Realtime
+stays the fast path when it works.
+
+### `01d600a` Customer notifications: vibrate, chime, OS banner
+
+Customer status screen now fires three layers of alert on status
+TRANSITIONS (gated by a `lastStatusRef` so polling re-confirmations don't
+re-fire):
+- Vibration: long pulsing pattern on `ready`, short blip on
+  accepted/preparing, sad double on cancelled.
+- Web Audio chime: rising 3-tone arpeggio on `ready`, descending tone on
+  cancelled. AudioContext is resumed (needed for iOS Safari after the
+  Place Order tap warms it up).
+- Browser Notification: OS-level banner; permission requested lazily on
+  the Place Order tap (user gesture required by browsers).
+
+### `a3a92f3` Stripe Connect — card payments routed to each pub's bank
+
+Wires the full card-payment flow on top of the existing order system:
+
+- **Schema migration** (idempotent, ran 2026-06-16):
+  - `pubs.stripe_account_id text` — the connected account id
+  - `pubs.stripe_charges_enabled boolean` — onboarding completed flag
+  - `orders.payment_intent_id text` — for webhook idempotency
+  - `orders.payment_status text` CHECK (unpaid|pending|paid|refunded|failed)
+  - `orders.paid_at timestamptz`
+  - `idx_orders_payment_intent` on `payment_intent_id`
+
+- **`src/lib/stripe/server.ts`** + **`src/lib/stripe/client.ts`** — lazy
+  server + browser SDK loaders, fail-soft when env vars missing so a
+  misconfigured deploy doesn't crash the whole app.
+
+- **`/api/stripe/connect/onboard`** — POST creates a Stripe Express
+  connected account for the signed-in owner's pub (`business_type:
+  individual`, MCC 5813 for drinking establishments), saves the
+  account id to the pub, returns a one-time hosted onboarding URL.
+
+- **`/api/stripe/connect/status`** — GET fetches latest connected-account
+  state from Stripe and syncs `stripe_charges_enabled` into the DB.
+  Used by the Settings page to reflect onboarding status without waiting
+  for a webhook round-trip.
+
+- **`/api/stripe/payment-intent`** — POST creates a Payment Intent for the
+  cart. Refetches menu items server-side to validate prices (price-tamper
+  protection), enforces the €5 minimum order, and creates the intent with
+  `transfer_data: { destination: pub.stripe_account_id }` so Stripe routes
+  the money to the pub's connected balance. Application fee currently €0.
+  Order metadata is stashed on the Payment Intent so the webhook can
+  reconstruct it.
+
+- **`/api/stripe/webhook`** — verifies Stripe-Signature against
+  `STRIPE_WEBHOOK_SECRET`, then handles:
+  - `payment_intent.succeeded` → creates the Order + order_items in
+    Supabase (using service_role to bypass RLS); idempotent on the
+    payment_intent_id.
+  - `payment_intent.payment_failed` → logs; no order created.
+  - `account.updated` → syncs `pubs.stripe_charges_enabled`.
+  - `account.application.deauthorized` → clears the pub's stripe link.
+
+- **`/app/settings`** — new "Receive payments" card with three states:
+  not connected (Connect Stripe button), onboarding incomplete
+  (Continue Stripe onboarding + missing-field list from Stripe API),
+  and fully connected (✅ + link to Stripe dashboard).
+
+- **`order/[pubSlug]/[tableToken]/payment-screen.tsx`** (new) — Stripe
+  Payment Element mounted with a server-issued client_secret. On success
+  polls Supabase for the webhook-created Order row (with 20s timeout) and
+  hands it back to the ordering client via `onPaid`. Themed to match
+  BarTab's dark aesthetic via Stripe Appearance API.
+
+- **`ordering-client.tsx`** — Place Order now swaps the cart sheet over to
+  the Payment Screen in production. Demo mode keeps the old instant-order
+  flow.
+
+Money flow verified end-to-end with `4242 4242 4242 4242`: customer pays
+€6.50 → Stripe processes → €6.37 net lands in Sids' connected account
+balance (€0.13 processing fee).
+
+### `85326ce` Better error handling in /api/stripe/payment-intent
+
+Wrapped the route in try/catch so unhandled exceptions return a JSON
+`{error}` body instead of an empty 500 (which the client can't parse and
+shows "Unexpected end of JSON input"). Also added an explicit 400 when
+the pub's `stripe_charges_enabled` is still false — gives the customer a
+clear "this pub hasn't finished Stripe onboarding" message instead of a
+generic crash.
+
+### Operational milestones (not in commits)
+
+- Supabase project `pwvaunskyjzpxvozcnkk` created in new `bartab` free-tier org
+- Vercel project `bartab-demo` connected to GitHub, production branch
+  switched from `master` to `bartab-nextjs`
+- Stripe sandbox platform account `BarTab` created in Ireland
+- Stripe webhook `BarTab production` created listening to 4 events
+- First test card payment processed end-to-end (Order #7529 / €6.50)
+
+---
+
 ## Baseline (commit `128b1b7`, 2026-05-07)
 
 Pre-existing state when the engineering audit began. BarTab is a
