@@ -16,16 +16,22 @@ import { createClient } from '@supabase/supabase-js';
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const isPlaceholder =
-  !SUPABASE_URL || SUPABASE_URL.includes('placeholder');
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const isPlaceholder = !SUPABASE_URL || SUPABASE_URL.includes('placeholder');
 
-// Skip the whole file if we're not in production mode.
+// After the security lockdown the anon key can no longer read pubs/tables/
+// orders, so this harness needs the service-role key for discovery,
+// verification and cleanup. Skip the file if not in production mode or absent.
 test.skip(
-  isPlaceholder,
-  'Production smoke tests only run when NEXT_PUBLIC_SUPABASE_URL points at real Supabase'
+  isPlaceholder || !SUPABASE_SERVICE_ROLE_KEY,
+  'Production smoke tests need a real NEXT_PUBLIC_SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY'
 );
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+// Service-role client — appropriate for a test harness doing setup/verification.
+const supabase = createClient(
+  SUPABASE_URL,
+  SUPABASE_SERVICE_ROLE_KEY ?? SUPABASE_ANON_KEY
+);
 
 // Discover the first pub + a few tables at suite start, so the tests are
 // resilient to whatever pub the user happens to have onboarded.
@@ -91,7 +97,11 @@ test.describe('Production-mode customer ordering', () => {
     expect(response?.status()).toBe(404);
   });
 
-  test('places an order and the row appears in Supabase', async ({ page }) => {
+  // FIXME: rework for the Stripe payment + /api/checkin flow. In production
+  // "Place Order" now opens the Stripe Payment Element (no instant order row),
+  // and ordering requires a valid check-in cookie. The three order-placement
+  // tests below assume the old demo-style instant order and no longer apply.
+  test.fixme('places an order and the row appears in Supabase', async ({ page }) => {
     await page.goto(`/order/${pubSlug}/${firstTableToken}`);
 
     // Add one of the first menu item.
@@ -139,7 +149,7 @@ test.describe('Production-mode customer ordering', () => {
     await supabase.from('orders').delete().eq('id', order!.id);
   });
 
-  test('two customers at different tables get distinct orders', async ({
+  test.fixme('two customers at different tables get distinct orders', async ({
     browser,
   }) => {
     // Separate contexts → separate cookie jars, so each customer has their
@@ -197,7 +207,7 @@ test.describe('Production-mode customer ordering', () => {
     await ctxB.close();
   });
 
-  test('realtime: bar-side status update propagates to customer screen', async ({
+  test.fixme('realtime: bar-side status update propagates to customer screen', async ({
     page,
   }) => {
     // KNOWN FLAKY on Supabase Free tier:
