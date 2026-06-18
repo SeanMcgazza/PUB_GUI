@@ -21,6 +21,7 @@ export interface Database {
           settings: Json;
           stripe_account_id: string | null;
           stripe_charges_enabled: boolean;
+          require_checkin_approval: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -35,6 +36,7 @@ export interface Database {
           settings?: Json;
           stripe_account_id?: string | null;
           stripe_charges_enabled?: boolean;
+          require_checkin_approval?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -49,6 +51,7 @@ export interface Database {
           settings?: Json;
           stripe_account_id?: string | null;
           stripe_charges_enabled?: boolean;
+          require_checkin_approval?: boolean;
           created_at?: string;
           updated_at?: string;
         };
