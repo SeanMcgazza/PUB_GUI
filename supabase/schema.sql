@@ -270,3 +270,87 @@ END;
 $$;
 REVOKE ALL ON FUNCTION public.check_rate_limit(text, int, int) FROM public;
 GRANT EXECUTE ON FUNCTION public.check_rate_limit(text, int, int) TO anon, authenticated;
+
+-- ============================================================================
+-- Optional staff-approved check-in (migrations/0002_staff_approval_checkin.sql)
+-- ============================================================================
+ALTER TABLE public.pubs
+  ADD COLUMN IF NOT EXISTS require_checkin_approval boolean NOT NULL DEFAULT false;
+
+CREATE TABLE IF NOT EXISTS public.table_checkins (
+  id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  pub_id     uuid NOT NULL REFERENCES public.pubs(id) ON DELETE CASCADE,
+  table_id   uuid NOT NULL REFERENCES public.tables(id) ON DELETE CASCADE,
+  status     text NOT NULL DEFAULT 'pending'
+             CHECK (status IN ('pending', 'approved', 'rejected', 'expired')),
+  created_at timestamptz NOT NULL DEFAULT now(),
+  decided_at timestamptz
+);
+CREATE INDEX IF NOT EXISTS idx_table_checkins_pub_status
+  ON public.table_checkins(pub_id, status);
+
+ALTER TABLE public.table_checkins ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "Owners manage own checkins" ON public.table_checkins;
+CREATE POLICY "Owners manage own checkins" ON public.table_checkins
+  FOR ALL USING (
+    pub_id IN (SELECT id FROM public.pubs WHERE owner_id = auth.uid())
+  );
+ALTER TABLE public.table_checkins REPLICA IDENTITY FULL;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.table_checkins;
+
+CREATE OR REPLACE FUNCTION public.request_checkin(p_slug text, p_qr_token text)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+DECLARE
+  v_pub     public.pubs;
+  v_table   public.tables;
+  v_checkin public.table_checkins;
+BEGIN
+  SELECT * INTO v_pub FROM public.pubs WHERE slug = p_slug;
+  IF NOT FOUND THEN RETURN NULL; END IF;
+
+  SELECT * INTO v_table
+    FROM public.tables
+   WHERE pub_id = v_pub.id AND qr_token = p_qr_token;
+  IF NOT FOUND THEN RETURN NULL; END IF;
+
+  IF NOT v_pub.require_checkin_approval THEN
+    RETURN jsonb_build_object('requiresApproval', false,
+      'pubId', v_pub.id, 'tableId', v_table.id);
+  END IF;
+
+  SELECT * INTO v_checkin
+    FROM public.table_checkins
+   WHERE table_id = v_table.id
+     AND status IN ('pending', 'approved')
+     AND created_at > now() - interval '30 minutes'
+   ORDER BY created_at DESC
+   LIMIT 1;
+
+  IF NOT FOUND THEN
+    INSERT INTO public.table_checkins (pub_id, table_id)
+      VALUES (v_pub.id, v_table.id)
+      RETURNING * INTO v_checkin;
+  END IF;
+
+  RETURN jsonb_build_object('requiresApproval', true,
+    'pubId', v_pub.id, 'tableId', v_table.id,
+    'checkinId', v_checkin.id, 'status', v_checkin.status);
+END;
+$$;
+REVOKE ALL ON FUNCTION public.request_checkin(text, text) FROM public;
+GRANT EXECUTE ON FUNCTION public.request_checkin(text, text) TO anon, authenticated;
+
+CREATE OR REPLACE FUNCTION public.get_checkin_status(p_checkin_id uuid)
+RETURNS text
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+  SELECT status FROM public.table_checkins WHERE id = p_checkin_id
+$$;
+REVOKE ALL ON FUNCTION public.get_checkin_status(uuid) FROM public;
+GRANT EXECUTE ON FUNCTION public.get_checkin_status(uuid) TO anon, authenticated;

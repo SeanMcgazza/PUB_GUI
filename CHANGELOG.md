@@ -6,6 +6,29 @@ captures: what was fixed/built, why, and how it was verified.
 
 ---
 
+## Phase 5 — Staff-approved check-in (2026-06-18, branch `staff-approval-checkin`)
+
+Optional, opt-in-per-pub presence gate stacked on Phase 4. When a pub turns on
+`require_checkin_approval`, scanning a table QR no longer immediately unlocks
+ordering — staff must Approve the check-in on the dashboard first, and approval
+happens *before* payment so a rejected table is never charged.
+
+- **DB (`migrations/0002_staff_approval_checkin.sql`):** `pubs.require_checkin_approval`
+  toggle; `table_checkins` table (RLS: owners only) with realtime; `request_checkin`
+  (creates/returns a pending check-in, or signals no-approval-needed) and
+  `get_checkin_status` SECURITY DEFINER functions.
+- **Customer:** `/api/checkin` withholds the session cookie until approved; the
+  ordering page shows a "waiting for staff" gate and polls `get_checkin_status`,
+  re-requesting the cookie once approved (or a "declined" notice if rejected).
+- **Staff:** new `CheckinApprovals` panel on the Orders dashboard (realtime + 3s
+  poll) with Approve/Reject; a Settings toggle to turn the whole feature on/off.
+
+Off by default, so pubs that don't want the extra tap are unaffected.
+Verified: `tsc` clean, `next build` clean, 66 unit tests pass. Runtime
+verification against live Supabase still required after running migration 0002.
+
+---
+
 ## Phase 4 — Security hardening (2026-06-18, branch `security-hardening`)
 
 Closes the launch-blocking findings from the security audit. The app's happy

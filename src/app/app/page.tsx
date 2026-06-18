@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
+import { CheckinApprovals } from '@/components/CheckinApprovals';
 import type { Order, OrderItem, Table } from '@/types/database';
 import { formatDistanceToNow } from 'date-fns';
 import {
@@ -311,6 +312,9 @@ export default function DashboardPage() {
       <audio ref={audioRef} preload="auto">
         <source src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2teleiyC2NugqHpPJCR2y+3d0J6Abzg1RILo7+PWrH89HRxLrt7u7tGykWk+JitZju719urLnGs2GxdNqNr2+O3TtpNlNRsWRaHS8/zz4dCvjmIxFg84ldLu/f7+9ubEoXQ8GA0ticrq////++/RsYZHIQ8gisDm////++/Ts4lJIg8gisDm////////x55xRB0MHYvF6v////////vgwZ1wRh8OH4zJ7f///////fHVrYpNKRUQgMTx////////8+vdroxOKhURgMXz////////9e7hrY1RLBgRfcP1/////////PPhsZBSLhoSfMP2/////////fflupVVMB0TesL4//////////vrvphXMh8VeL/5//////////3zwZ1bNSEWdb35//////////70xaFdNyQXc7z7///////////3yKRgOSYYcbr8////////////+symYjwpGm+5/f////////////7/z61mQCwbbrj+/////////////9GwakIuHGy3/////////////////9SzbEQuHWy3/////////////////9azcEYwH2u2/////////////////9i1ckgxIGq1//////////////////+4dEoyIWm0//////////////////+5d0wzImiz//////////////////+6ek40I2ey//////////////////+8fVA2JGax//////////////////++gFE3JWWw//////////////////+/g1M4J2Sv///////////////////AhVU6KGOu///////////////////BiFc7KWKt///////////////////CilpWWVpa" type="audio/wav" />
       </audio>
+
+      {/* Pending staff-approval check-ins (only render when the pub requires it) */}
+      <CheckinApprovals />
 
       {/* Header */}
       <motion.div

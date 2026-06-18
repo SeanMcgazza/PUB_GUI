@@ -136,6 +136,9 @@ export function OrderingClient({
   // sheet over to the Stripe payment view. False in demo mode or before
   // the customer has progressed past the cart.
   const [showPayment, setShowPayment] = useState(false);
+  // Staff-approval check-in gate (production only; 'ok' for demo / pubs that
+  // don't require approval). 'pending' = waiting for staff; 'rejected' = denied.
+  const [approval, setApproval] = useState<'ok' | 'pending' | 'rejected'>('ok');
   const categoryRefs = useRef<Record<string, HTMLElement | null>>({});
   // Track the previous order status so we can fire a notification only on
   // status TRANSITIONS, not on every poll tick that re-confirms the same state.
@@ -177,15 +180,56 @@ export function OrderingClient({
 
   // Production presence (audit C4): tell the server we scanned THIS table's QR
   // so it mints a short-lived check-in cookie that /api/stripe/payment-intent
-  // requires. Non-fatal if it fails — the payment step will prompt a re-scan.
+  // requires. If the pub requires staff approval, the cookie is withheld until
+  // staff approve — we poll the check-in status and re-request once approved.
   useEffect(() => {
     if (isDemoMode()) return;
-    fetch('/api/checkin', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ slug: pub.slug, qrToken: table.qr_token }),
-    }).catch(() => {});
-  }, [pub.slug, table.qr_token]);
+    let cancelled = false;
+    let pollId: ReturnType<typeof setInterval> | undefined;
+
+    const checkin = () =>
+      fetch('/api/checkin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug: pub.slug, qrToken: table.qr_token }),
+      }).then((r) => r.json());
+
+    (async () => {
+      try {
+        const data = await checkin();
+        if (cancelled) return;
+        if (data.ok) return; // session minted, ordering unlocked
+        if (data.status === 'rejected') {
+          setApproval('rejected');
+          return;
+        }
+        if (data.status === 'pending_approval' && data.checkinId) {
+          setApproval('pending');
+          pollId = setInterval(async () => {
+            const { data: status } = await supabase.rpc('get_checkin_status', {
+              p_checkin_id: data.checkinId,
+            });
+            if (cancelled) return;
+            if (status === 'approved') {
+              if (pollId) clearInterval(pollId);
+              const confirmed = await checkin(); // re-request to mint the cookie
+              if (!cancelled && confirmed.ok) setApproval('ok');
+            } else if (status === 'rejected') {
+              if (pollId) clearInterval(pollId);
+              setApproval('rejected');
+            }
+          }, 3000);
+        }
+      } catch {
+        // Non-fatal: payment step will prompt a re-scan if no session exists.
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      if (pollId) clearInterval(pollId);
+    };
+  }, [pub.slug, table.qr_token, supabase]);
 
   // Restore an in-flight order if the user reloads. Real-Supabase only —
   // demo mode regenerates session_token per server render, so we'd find
@@ -618,6 +662,66 @@ export function OrderingClient({
             </Button>
           </motion.div>
         </div>
+      </div>
+    );
+  }
+
+  // ==========================================================================
+  // STAFF-APPROVAL GATE — shown when the pub requires staff to approve the
+  // check-in before ordering. Demo / no-approval pubs never reach this.
+  // ==========================================================================
+  if (approval !== 'ok') {
+    const rejected = approval === 'rejected';
+    return (
+      <div
+        className="min-h-screen bg-atmosphere flex items-center justify-center p-4"
+        style={themeStyle}
+      >
+        <motion.div
+          initial={{ scale: 0.92, opacity: 0, y: 20 }}
+          animate={{ scale: 1, opacity: 1, y: 0 }}
+          className="glass-strong rounded-3xl p-8 text-center shadow-pub-lg max-w-md w-full"
+        >
+          <div
+            className={cn(
+              'w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 border-glass-strong',
+              rejected ? 'bg-red-400/10' : 'bg-amber-400/10'
+            )}
+          >
+            {rejected ? (
+              <X className="w-10 h-10 text-red-300" />
+            ) : (
+              <Clock className="w-10 h-10 text-amber-300" />
+            )}
+          </div>
+          <h1 className="font-serif text-2xl mb-1 text-[color:var(--theme-text-primary)]">
+            {pub.name}
+          </h1>
+          <p className="text-sm text-[color:var(--theme-text-muted)] mb-5">
+            Table {table.number}
+            {table.name ? ` · ${table.name}` : ''}
+          </p>
+          {rejected ? (
+            <>
+              <p className="text-lg text-red-300 mb-2">Check-in declined</p>
+              <p className="text-sm text-[color:var(--theme-text-muted)]">
+                Staff couldn&apos;t confirm this table. Please ask a member of
+                staff for help.
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="text-lg text-amber-300 mb-2">
+                Waiting for staff to confirm your table…
+              </p>
+              <p className="text-sm text-[color:var(--theme-text-muted)]">
+                A staff member will approve your check-in in a moment — then you
+                can order.
+              </p>
+              <Loader2 className="w-6 h-6 animate-spin mx-auto mt-6 text-[color:var(--theme-primary-glow)]" />
+            </>
+          )}
+        </motion.div>
       </div>
     );
   }

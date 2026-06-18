@@ -183,6 +183,7 @@ commit you cloned. If you ever rebuild from scratch:
 | 2026-06-06 | Post-`a1e4d5e` diff (see below) | UNIQUE(pub_id,number); orders.cancel_reason; REPLICA IDENTITY FULL; immutable slug trigger |
 | 2026-06-16 | Stripe Connect columns (see below) | `pubs.stripe_account_id`, `pubs.stripe_charges_enabled`, `orders.payment_intent_id`, `orders.payment_status`, `orders.paid_at` |
 | 2026-06-18 | `migrations/0001_security_hardening.sql` | **Security lockdown.** Drops public SELECT/INSERT on orders + public SELECT on pubs/tables; adds `get_ordering_context` / `get_order_status` / `check_rate_limit` functions + `rate_limits` table; unique `payment_intent_id` + active `confirmation_code`; `logo_url` https CHECK. **Run this file in the SQL editor.** Also set `TABLE_SESSION_SECRET`. |
+| 2026-06-18 | `migrations/0002_staff_approval_checkin.sql` | Optional staff-approved check-in: `pubs.require_checkin_approval` toggle, `table_checkins` table (+ RLS + realtime), `request_checkin` / `get_checkin_status` functions. Run after 0001. Off by default — owners enable it in Settings. |
 
 ### Post-`a1e4d5e` migration (idempotent — safe to re-run)
 
