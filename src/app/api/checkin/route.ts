@@ -49,18 +49,40 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
   }
 
-  // Resolve + validate the table belongs to the pub. Wrong token => null.
-  const { data: ctx } = await sb.rpc('get_ordering_context', {
+  // Resolve + validate the table belongs to the pub, and find out whether this
+  // pub requires staff approval. Wrong token => null (no enumeration).
+  const { data: result } = await sb.rpc('request_checkin', {
     p_slug: slug,
     p_qr_token: qrToken,
   });
-  if (!ctx) {
+  if (!result) {
     return NextResponse.json({ error: 'Invalid table code' }, { status: 404 });
   }
 
-  const c = ctx as unknown as { pub: { id: string }; table: { id: string } };
-  const token = signTableSession(c.pub.id, c.table.id);
+  const r = result as unknown as {
+    requiresApproval: boolean;
+    pubId: string;
+    tableId: string;
+    checkinId?: string;
+    status?: string;
+  };
 
+  // Approval required and not yet granted → do NOT mint a session. The customer
+  // waits; staff approve on the dashboard; the client re-calls this route once
+  // approved to get the cookie.
+  if (r.requiresApproval && r.status !== 'approved') {
+    if (r.status === 'rejected') {
+      return NextResponse.json({ ok: false, status: 'rejected' });
+    }
+    return NextResponse.json({
+      ok: false,
+      status: 'pending_approval',
+      checkinId: r.checkinId,
+    });
+  }
+
+  // No approval required, or already approved → mint the session cookie.
+  const token = signTableSession(r.pubId, r.tableId);
   const res = NextResponse.json({ ok: true });
   res.cookies.set(CHECKIN_COOKIE, token, {
     httpOnly: true,

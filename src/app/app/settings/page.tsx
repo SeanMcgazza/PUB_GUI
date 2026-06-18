@@ -7,9 +7,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { motion } from 'framer-motion';
 import {
-  Building2, Copy, Check, ExternalLink, Loader2, CreditCard, AlertCircle
+  Building2, Copy, Check, ExternalLink, Loader2, CreditCard, AlertCircle, ShieldCheck
 } from 'lucide-react';
 
 export default function SettingsPage() {
@@ -84,6 +85,16 @@ export default function SettingsPage() {
       alert('Failed to save settings');
     } finally {
       setSaving(false);
+    }
+  };
+
+  // Toggle the staff-approval check-in requirement (saves immediately).
+  const handleToggleApproval = async (value: boolean) => {
+    try {
+      await updatePub({ require_checkin_approval: value });
+    } catch (err) {
+      console.error('Error updating check-in setting:', err);
+      alert('Failed to update setting');
     }
   };
 
@@ -357,6 +368,36 @@ export default function SettingsPage() {
                 </Button>
               </div>
             )}
+          </CardContent>
+        </Card>
+
+        {/* Staff-approval check-in */}
+        <Card className="shadow-sm">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <ShieldCheck className="w-5 h-5 text-muted-foreground" />
+              Require staff approval to order
+            </CardTitle>
+            <CardDescription>
+              When on, a customer who scans a table QR can&apos;t order until a
+              staff member approves their check-in on the Orders dashboard. The
+              strongest protection against people ordering from outside the
+              venue — at the cost of one tap per table.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between gap-4">
+              <span className="text-sm text-muted-foreground">
+                {pub?.require_checkin_approval
+                  ? 'On — staff approve each table before it can order'
+                  : 'Off — anyone who scans a table QR can order'}
+              </span>
+              <Switch
+                checked={pub?.require_checkin_approval ?? false}
+                onCheckedChange={handleToggleApproval}
+                aria-label="Require staff approval to order"
+              />
+            </div>
           </CardContent>
         </Card>
 
