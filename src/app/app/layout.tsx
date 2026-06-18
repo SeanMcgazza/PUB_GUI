@@ -1,20 +1,19 @@
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
+import { isDemoMode, assertNotAccidentalDemo } from '@/lib/demo-mode';
 import { AppShell } from '@/components/layout/app-shell';
 
 export const dynamic = 'force-dynamic';
-
-// Check if demo mode (server-side)
-function isDemoMode() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  return !url || url.includes('placeholder');
-}
 
 export default async function AppLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  // Fail closed: never serve the dashboard auth-less because of a missing env
+  // var in production (C8). Throws on misconfiguration instead.
+  assertNotAccidentalDemo();
+
   // Demo mode - skip auth checks
   if (isDemoMode()) {
     return <AppShell>{children}</AppShell>;

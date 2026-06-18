@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
+import { isDemoMode } from '@/lib/demo-mode';
 import { OrderingClient } from './ordering-client';
 import type { Pub, Table, MenuCategory, MenuItem } from '@/types/database';
 
@@ -60,12 +61,6 @@ const DEMO_MENU_ITEMS = [
   { id: 'm22', pub_id: DEMO_PUB.id, category_id: 'cat6', name: 'Beef Burger', description: '6oz patty, bacon, cheese, brioche bun', price: 14.50, is_available: true },
 ];
 
-// Check if demo mode (server-side)
-function isDemoMode() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  return !url || url.includes('placeholder');
-}
-
 interface PageProps {
   params: Promise<{
     pubSlug: string;
@@ -101,47 +96,29 @@ export default async function OrderPage({ params }: PageProps) {
     );
   }
 
-  // Production mode - fetch from Supabase
+  // Production mode — resolve the ordering context through the SECURITY DEFINER
+  // RPC. This returns the pub (safe columns only), the table, and the menu ONLY
+  // when the qr_token matches a table in this pub; a wrong/guessed token returns
+  // null (no enumeration). Direct public SELECT on pubs/tables was removed.
   const supabase = await createClient();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const sb = supabase as any;
 
-  // Fetch pub by slug
-  const { data: pub, error: pubError } = await sb
-    .from('pubs')
-    .select('*')
-    .eq('slug', pubSlug)
-    .single() as { data: Pub | null; error: unknown };
+  const { data: ctx, error: ctxError } = await sb.rpc('get_ordering_context', {
+    p_slug: pubSlug,
+    p_qr_token: tableToken,
+  });
 
-  if (pubError || !pub) {
+  if (ctxError || !ctx) {
     notFound();
   }
 
-  // Fetch table by qr_token and verify it belongs to this pub
-  const { data: table, error: tableError } = await sb
-    .from('tables')
-    .select('*')
-    .eq('qr_token', tableToken)
-    .eq('pub_id', pub.id)
-    .single() as { data: Table | null; error: unknown };
-
-  if (tableError || !table) {
-    notFound();
-  }
-
-  // Fetch menu categories and items
-  const { data: categories } = await sb
-    .from('menu_categories')
-    .select('*')
-    .eq('pub_id', pub.id)
-    .order('order', { ascending: true }) as { data: MenuCategory[] | null };
-
-  const { data: menuItems } = await sb
-    .from('menu_items')
-    .select('*')
-    .eq('pub_id', pub.id)
-    .eq('is_available', true)
-    .order('name', { ascending: true }) as { data: MenuItem[] | null };
+  const context = ctx as {
+    pub: Pub;
+    table: Table;
+    categories: MenuCategory[];
+    menu_items: MenuItem[];
+  };
 
   // Get or create session token
   const cookieStore = await cookies();
@@ -153,10 +130,10 @@ export default async function OrderPage({ params }: PageProps) {
 
   return (
     <OrderingClient
-      pub={pub}
-      table={table}
-      categories={categories || []}
-      menuItems={menuItems || []}
+      pub={context.pub}
+      table={context.table}
+      categories={context.categories || []}
+      menuItems={context.menu_items || []}
       sessionToken={sessionToken}
     />
   );

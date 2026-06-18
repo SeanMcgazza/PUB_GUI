@@ -320,10 +320,6 @@ export const DEMO_ORDERS = [
   },
 ];
 
-// Demo mode = no real Supabase URL configured.
-// NEXT_PUBLIC_* env vars are inlined at build time, so this works identically
-// on server and client.
-export const isDemoMode = () => {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  return !url || url.includes('placeholder');
-};
+// Demo-mode detection lives in one place now (src/lib/demo-mode.ts) so the
+// client, server components, and middleware can't disagree (audit item C8).
+export { isDemoMode } from './demo-mode';

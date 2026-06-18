@@ -1,13 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import crypto from 'crypto';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { getStripe, isStripeConfigured } from '@/lib/stripe/server';
+import { verifyTableSession, CHECKIN_COOKIE } from '@/lib/table-session';
+
+export const runtime = 'nodejs';
 
 // Minimum order value (€) — mirrors the value in ordering-client.tsx.
 // Enforced here on the server so a tampered client can't bypass it.
 const MIN_ORDER_VALUE = 5;
+// Maximum order value (€) — sanity cap so a tampered/looped client can't
+// create an absurd Payment Intent.
+const MAX_ORDER_VALUE = 1000;
 // Platform fee per order in cents. €0 = no cut for the platform; pub gets
 // the full amount minus Stripe's own processing fee.
 const PLATFORM_FEE_CENTS = 0;
+// Abuse caps: per browser session and per IP, within a 10-minute window.
+const RATE_LIMIT_WINDOW_SECS = 600;
+const MAX_INTENTS_PER_SESSION = 8;
+const MAX_INTENTS_PER_IP = 30;
 
 /**
  * POST /api/stripe/payment-intent
@@ -76,11 +87,32 @@ async function handle(request: NextRequest) {
     );
   }
 
-  // No auth required — this endpoint is called by unauthenticated customers.
-  // RLS allows public SELECT on pubs/tables/menu_items.
-  const supabase = await createClient();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sb = supabase as any;
+  // No user auth — customers are anonymous. We use the service-role client for
+  // the server-side lookups/validation below (public RLS reads on pubs/tables
+  // were removed in the security lockdown). Everything is validated here before
+  // any Payment Intent is created.
+  const sb = createAdminClient();
+
+  // Abuse throttling: cap Payment Intent creation per session and per IP.
+  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+  const [{ data: sessionOk }, { data: ipOk }] = await Promise.all([
+    sb.rpc('check_rate_limit', {
+      p_key: `pi:sess:${sessionToken}`,
+      p_max: MAX_INTENTS_PER_SESSION,
+      p_window_secs: RATE_LIMIT_WINDOW_SECS,
+    }),
+    sb.rpc('check_rate_limit', {
+      p_key: `pi:ip:${ip}`,
+      p_max: MAX_INTENTS_PER_IP,
+      p_window_secs: RATE_LIMIT_WINDOW_SECS,
+    }),
+  ]);
+  if (sessionOk === false || ipOk === false) {
+    return NextResponse.json(
+      { error: 'Too many orders in a short time. Please wait a moment.' },
+      { status: 429 }
+    );
+  }
 
   // Look up the pub by slug.
   const { data: pub, error: pubErr } = await sb
@@ -119,6 +151,23 @@ async function handle(request: NextRequest) {
     .single();
   if (!table) {
     return NextResponse.json({ error: 'Table not found' }, { status: 404 });
+  }
+
+  // Presence enforcement: require a valid, unexpired check-in session minted by
+  // /api/checkin when the customer scanned THIS table's QR. Combined with the
+  // RLS lockdown (qr_tokens are no longer enumerable), this bounds ordering to
+  // someone who physically scanned the table, within a time window — so a
+  // shared link or stale tab stops working.
+  const session = verifyTableSession(request.cookies.get(CHECKIN_COOKIE)?.value);
+  if (!session || session.pubId !== pub.id || session.tableId !== table.id) {
+    return NextResponse.json(
+      {
+        error:
+          'Your table session has expired. Please re-scan the QR code at your table to order.',
+        code: 'CHECKIN_REQUIRED',
+      },
+      { status: 403 }
+    );
   }
 
   // Refetch prices server-side. NEVER trust client prices.
@@ -182,13 +231,23 @@ async function handle(request: NextRequest) {
     );
   }
 
+  if (totalEuros > MAX_ORDER_VALUE) {
+    return NextResponse.json(
+      {
+        error: `Order exceeds the maximum of €${MAX_ORDER_VALUE.toFixed(2)}. Please split it or order at the bar.`,
+        total: totalEuros,
+        maximum: MAX_ORDER_VALUE,
+      },
+      { status: 400 }
+    );
+  }
+
   // Round to cents to avoid Stripe rejecting fractional cents.
   const amountCents = Math.round(totalEuros * 100);
 
-  // A short 4-digit code for the bar to call out / customer to repeat back.
-  const confirmationCode = String(
-    Math.floor(1000 + Math.random() * 9000)
-  );
+  // A 6-digit crypto-random code for the bar to call out / customer to repeat
+  // back. The webhook re-rolls it on the rare active-order collision.
+  const confirmationCode = String(crypto.randomInt(100000, 1000000));
 
   const stripe = getStripe();
   let paymentIntent;
