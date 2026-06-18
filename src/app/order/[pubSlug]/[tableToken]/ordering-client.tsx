@@ -175,31 +175,49 @@ export function OrderingClient({
     document.cookie = `bartab_session=${sessionToken}; path=/; max-age=${2 * 60 * 60}; SameSite=Lax`;
   }, [sessionToken]);
 
+  // Production presence (audit C4): tell the server we scanned THIS table's QR
+  // so it mints a short-lived check-in cookie that /api/stripe/payment-intent
+  // requires. Non-fatal if it fails — the payment step will prompt a re-scan.
+  useEffect(() => {
+    if (isDemoMode()) return;
+    fetch('/api/checkin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ slug: pub.slug, qrToken: table.qr_token }),
+    }).catch(() => {});
+  }, [pub.slug, table.qr_token]);
+
   // Restore an in-flight order if the user reloads. Real-Supabase only —
   // demo mode regenerates session_token per server render, so we'd find
   // nothing useful.
   useEffect(() => {
     if (isDemoMode()) return;
     const checkExistingOrder = async () => {
-      const { data } = await supabase
-        .from('orders')
-        .select('*')
-        .eq('session_token', sessionToken)
-        .eq('pub_id', pub.id)
-        .in('status', ['pending', 'accepted', 'preparing', 'ready'])
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single();
-      if (data) setActiveOrder(data);
+      // Read only THIS session's orders via the definer RPC (public SELECT on
+      // orders was removed).
+      const { data } = await supabase.rpc('get_order_status', {
+        p_session_token: sessionToken,
+      });
+      const rows = (data || []) as Order[];
+      const active = rows
+        .filter(
+          (o) =>
+            o.pub_id === pub.id &&
+            ['pending', 'accepted', 'preparing', 'ready'].includes(o.status)
+        )
+        .sort((a, b) => (a.created_at < b.created_at ? 1 : -1))[0];
+      if (active) setActiveOrder(active);
     };
     checkExistingOrder();
   }, [sessionToken, pub.id, supabase]);
 
-  // Order status realtime — demo via localStorage events, prod via Supabase
-  // postgres_changes channel.
+  // Order status updates — demo via localStorage events. In production the
+  // customer can no longer use Supabase realtime (it would require public
+  // SELECT on orders, removed in the security lockdown), so the 3-second poll
+  // below — keyed by the customer's own session token via the definer RPC — is
+  // the update path. (The bar dashboard still uses realtime; it's authenticated.)
   useEffect(() => {
     if (!activeOrder) return;
-
     if (isDemoMode()) {
       const unsub = DemoOrdersState.subscribe((all) => {
         const updated = all.find((o) => o.id === activeOrder.id);
@@ -207,28 +225,7 @@ export function OrderingClient({
       });
       return unsub;
     }
-
-    const channel = supabase
-      .channel(`order-${activeOrder.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'orders',
-          filter: `id=eq.${activeOrder.id}`,
-        },
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (payload: any) => {
-          setActiveOrder(payload.new as Order);
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [activeOrder, supabase]);
+  }, [activeOrder]);
 
   // Polling fallback: re-fetch the active order every 3 seconds in production
   // mode so the customer screen keeps updating even when the Realtime
@@ -237,15 +234,15 @@ export function OrderingClient({
   useEffect(() => {
     if (!activeOrder || isDemoMode()) return;
     const id = setInterval(async () => {
-      const { data } = await supabase
-        .from('orders')
-        .select('*')
-        .eq('id', activeOrder.id)
-        .single();
-      if (data) setActiveOrder(data as Order);
+      const { data } = await supabase.rpc('get_order_status', {
+        p_session_token: sessionToken,
+      });
+      const rows = (data || []) as Order[];
+      const updated = rows.find((o) => o.id === activeOrder.id);
+      if (updated) setActiveOrder(updated);
     }, 3000);
     return () => clearInterval(id);
-  }, [activeOrder, supabase]);
+  }, [activeOrder, supabase, sessionToken]);
 
   // Status-change notifications: vibrate + chime + browser notification when
   // the order moves between states. Particularly important for the "ready"
@@ -643,7 +640,8 @@ export function OrderingClient({
           style={
             pub.logo_url
               ? {
-                  backgroundImage: `linear-gradient(180deg, rgba(15,17,21,0.4) 0%, rgba(15,17,21,0.95) 100%), url(${pub.logo_url})`,
+                  // encodeURI so the URL can't break out of url() and inject CSS.
+                  backgroundImage: `linear-gradient(180deg, rgba(15,17,21,0.4) 0%, rgba(15,17,21,0.95) 100%), url("${encodeURI(pub.logo_url)}")`,
                   backgroundSize: 'cover',
                   backgroundPosition: 'center',
                 }

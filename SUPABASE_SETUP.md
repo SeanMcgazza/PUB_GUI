@@ -60,9 +60,17 @@ ALLOWED_DEV_ORIGINS=192.168.1.13
 STRIPE_SECRET_KEY=sk_test_...
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
 STRIPE_WEBHOOK_SECRET=whsec_...
-# Server role key, ONLY for the webhook route to bypass RLS when inserting
-# orders. Server-only — never expose to the client.
+# Server role key. Used by the webhook, the payment-intent route, and the
+# check-in route to bypass RLS for trusted server-side work. Server-only —
+# never expose to the client.
 SUPABASE_SERVICE_ROLE_KEY=eyJ...service-role-key...
+
+# --- Table check-in presence (required in production) ---
+# Random >= 16-char secret that signs the short-lived table-session cookie
+# minted by /api/checkin and required by /api/stripe/payment-intent. This is
+# what stops ordering from a shared link / stale tab. Generate with:
+#   node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"
+TABLE_SESSION_SECRET=replace-with-a-long-random-secret
 ```
 
 The **anon public** key is what goes in `NEXT_PUBLIC_SUPABASE_ANON_KEY`. Don't
@@ -85,6 +93,7 @@ adding or changing any of these, trigger a no-cache redeploy.
 | `STRIPE_SECRET_KEY` | Server only | **YES** — keep secret |
 | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Browser | No |
 | `STRIPE_WEBHOOK_SECRET` | Server only (webhook) | **YES** — keep secret |
+| `TABLE_SESSION_SECRET` | Server only (checkin + payment-intent) | **YES** — keep secret |
 | `ALLOWED_DEV_ORIGINS` | Server (dev only) | No |
 
 ---
@@ -173,6 +182,7 @@ commit you cloned. If you ever rebuild from scratch:
 | 2026-06-06 | `supabase/schema.sql` at commit `a1e4d5e` | Initial schema — 6 tables, RLS, realtime |
 | 2026-06-06 | Post-`a1e4d5e` diff (see below) | UNIQUE(pub_id,number); orders.cancel_reason; REPLICA IDENTITY FULL; immutable slug trigger |
 | 2026-06-16 | Stripe Connect columns (see below) | `pubs.stripe_account_id`, `pubs.stripe_charges_enabled`, `orders.payment_intent_id`, `orders.payment_status`, `orders.paid_at` |
+| 2026-06-18 | `migrations/0001_security_hardening.sql` | **Security lockdown.** Drops public SELECT/INSERT on orders + public SELECT on pubs/tables; adds `get_ordering_context` / `get_order_status` / `check_rate_limit` functions + `rate_limits` table; unique `payment_intent_id` + active `confirmation_code`; `logo_url` https CHECK. **Run this file in the SQL editor.** Also set `TABLE_SESSION_SECRET`. |
 
 ### Post-`a1e4d5e` migration (idempotent — safe to re-run)
 

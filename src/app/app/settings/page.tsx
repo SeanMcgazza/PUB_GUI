@@ -62,13 +62,22 @@ export default function SettingsPage() {
   const handleSave = async () => {
     if (!pub) return;
 
+    // logo_url is interpolated into CSS on the customer page, so force https
+    // (matches the DB CHECK constraint; gives a friendly message instead of a
+    // raw DB error). See audit C13.
+    const logo = form.logo_url.trim();
+    if (logo && !/^https:\/\//i.test(logo)) {
+      alert('Logo URL must start with https://');
+      return;
+    }
+
     setSaving(true);
     try {
       await updatePub({
         name: form.name,
         address: form.address || null,
         phone: form.phone || null,
-        logo_url: form.logo_url || null,
+        logo_url: logo || null,
       });
     } catch (err) {
       console.error('Error saving settings:', err);

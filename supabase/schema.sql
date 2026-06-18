@@ -2,45 +2,27 @@
 -- Pub ordering system
 --
 -- ============================================================================
--- SECURITY REVIEW (TODO before launch — needs a real Supabase project to test)
+-- SECURITY MODEL  (hardened — see supabase/migrations/0001_security_hardening.sql)
 -- ============================================================================
--- The current RLS policies are MVP-permissive. Before going to production:
+-- Public (anon-key) clients have NO direct read/write on orders, and no broad
+-- read on pubs/tables. They reach data through two SECURITY DEFINER functions:
+--   * get_ordering_context(slug, qr_token) — resolve a pub + table + menu, but
+--     ONLY when the qr_token matches (no table/qr_token enumeration).
+--   * get_order_status(session_token)      — read ONLY the caller's own order.
+-- Orders are created exclusively by the Stripe webhook (service-role key) after
+-- payment clears. Owners manage their own pub's rows via the owner RLS policies.
 --
--- 1. "Public can read own orders" (line ~93) currently uses USING (true).
---    Anyone with the anon key can read every pub's orders, including totals
---    and notes. Tighten to only allow reading orders matching the caller's
---    session_token cookie. Suggested approach: use request.headers JSON via
---    `current_setting('request.headers', true)::json` and parse the
---    `bartab_session` cookie. Alternatively, remove the public SELECT policy
---    and route order lookups through a SECURITY DEFINER Postgres function
---    that takes session_token as an argument.
+-- RESOLVED from the original audit:
+--   [done] public orders SELECT/INSERT removed (was USING/ WITH CHECK true)
+--   [done] public pubs/tables SELECT removed (qr_token + stripe_account_id leak)
+--   [done] confirmation_code uniqueness (idx_orders_active_code_uq)
+--   [done] payment_intent_id idempotency (idx_orders_payment_intent_uq)
+--   [done] logo_url forced https (pubs_logo_url_https) — CSS-injection guard
 --
--- 2. "Public can create orders" uses WITH CHECK (true). A malicious client
---    could insert orders with a forged pub_id or table_id. Tighten with
---    subquery validation:
---      WITH CHECK (
---        pub_id IN (SELECT id FROM public.pubs)
---        AND (
---          table_id IS NULL
---          OR EXISTS (
---            SELECT 1 FROM public.tables t
---            WHERE t.id = table_id AND t.pub_id = orders.pub_id
---          )
---        )
---      )
---
--- 3. orders.total is set client-side. The bar trusts what the customer
---    sends. Move totalling to a Postgres trigger that recomputes from
---    order_items × menu_items.price.
---
--- 4. confirmation_code (4-digit random) has no uniqueness constraint;
---    collisions are inevitable. Either add UNIQUE(pub_id, confirmation_code)
---    over a recent window, or generate sequentially per-pub.
---
--- 5. tables.qr_token and pubs are readable via USING (true). qr_token is a
---    UUID so unguessable in practice, but you may want a per-pub view that
---    exposes only ordering-relevant columns and hides phone/address until
---    they're actually used.
+-- STILL OPEN (tracked, not blocking the lockdown):
+--   [ ] orders.total is computed by the server route (payment-intent) from DB
+--       prices — good — but is not yet re-derived by a DB trigger. Consider a
+--       trigger that recomputes total from order_items x menu_items.price.
 -- ============================================================================
 
 -- Pubs (the business)
@@ -128,17 +110,15 @@ ALTER TABLE public.menu_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.order_items ENABLE ROW LEVEL SECURITY;
 
--- Public read for menus (customers need to see)
+-- Public read for menus (customers need to see). A menu is not sensitive.
 CREATE POLICY "Public can read menu items" ON public.menu_items FOR SELECT USING (is_available = true);
 CREATE POLICY "Public can read menu categories" ON public.menu_categories FOR SELECT USING (true);
-CREATE POLICY "Public can read pub info" ON public.pubs FOR SELECT USING (true);
-CREATE POLICY "Public can read tables" ON public.tables FOR SELECT USING (true);
 
--- Public can create orders (from QR scan)
-CREATE POLICY "Public can create orders" ON public.orders FOR INSERT WITH CHECK (true);
-CREATE POLICY "Public can create order items" ON public.order_items FOR INSERT WITH CHECK (true);
-CREATE POLICY "Public can read own orders" ON public.orders FOR SELECT USING (true);
-CREATE POLICY "Public can read order items" ON public.order_items FOR SELECT USING (true);
+-- NOTE: there is intentionally NO public SELECT on pubs/tables and NO public
+-- SELECT/INSERT on orders/order_items. Public access goes through the
+-- SECURITY DEFINER functions defined at the bottom of this file
+-- (get_ordering_context / get_order_status). Orders are inserted only by the
+-- Stripe webhook using the service-role key. See the SECURITY MODEL header.
 
 -- Owners manage their pub
 CREATE POLICY "Owners manage own pub" ON public.pubs FOR ALL USING (auth.uid() = owner_id);
@@ -181,3 +161,112 @@ DROP TRIGGER IF EXISTS pubs_slug_immutable ON public.pubs;
 CREATE TRIGGER pubs_slug_immutable
   BEFORE UPDATE ON public.pubs
   FOR EACH ROW EXECUTE FUNCTION public.prevent_pub_slug_change();
+
+-- ============================================================================
+-- Security hardening (see migrations/0001_security_hardening.sql for context)
+-- ============================================================================
+
+-- Integrity constraints
+CREATE UNIQUE INDEX IF NOT EXISTS idx_orders_payment_intent_uq
+  ON public.orders(payment_intent_id)
+  WHERE payment_intent_id IS NOT NULL;
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_orders_active_code_uq
+  ON public.orders(pub_id, confirmation_code)
+  WHERE status IN ('pending','accepted','preparing','ready');
+
+ALTER TABLE public.pubs
+  ADD CONSTRAINT pubs_logo_url_https
+  CHECK (logo_url IS NULL OR logo_url ~* '^https://');
+
+-- Public ordering reads (replaces public SELECT on pubs/tables).
+CREATE OR REPLACE FUNCTION public.get_ordering_context(p_slug text, p_qr_token text)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+DECLARE
+  v_pub   public.pubs;
+  v_table public.tables;
+BEGIN
+  SELECT * INTO v_pub FROM public.pubs WHERE slug = p_slug;
+  IF NOT FOUND THEN RETURN NULL; END IF;
+
+  SELECT * INTO v_table
+    FROM public.tables
+   WHERE pub_id = v_pub.id AND qr_token = p_qr_token;
+  IF NOT FOUND THEN RETURN NULL; END IF;
+
+  RETURN jsonb_build_object(
+    'pub', jsonb_build_object(
+      'id', v_pub.id, 'name', v_pub.name, 'slug', v_pub.slug,
+      'logo_url', v_pub.logo_url, 'settings', v_pub.settings,
+      'stripe_charges_enabled', v_pub.stripe_charges_enabled
+    ),
+    'table', jsonb_build_object(
+      'id', v_table.id, 'number', v_table.number, 'name', v_table.name,
+      'qr_token', v_table.qr_token, 'status', v_table.status
+    ),
+    'categories', COALESCE((
+      SELECT jsonb_agg(jsonb_build_object('id', c.id, 'pub_id', c.pub_id,
+                                          'name', c.name, 'order', c."order")
+                       ORDER BY c."order")
+        FROM public.menu_categories c WHERE c.pub_id = v_pub.id), '[]'::jsonb),
+    'menu_items', COALESCE((
+      SELECT jsonb_agg(jsonb_build_object('id', m.id, 'pub_id', m.pub_id,
+                                          'category_id', m.category_id, 'name', m.name,
+                                          'description', m.description, 'price', m.price,
+                                          'image_url', m.image_url, 'is_available', m.is_available)
+                       ORDER BY m.name)
+        FROM public.menu_items m
+       WHERE m.pub_id = v_pub.id AND m.is_available = true), '[]'::jsonb)
+  );
+END;
+$$;
+REVOKE ALL ON FUNCTION public.get_ordering_context(text, text) FROM public;
+GRANT EXECUTE ON FUNCTION public.get_ordering_context(text, text) TO anon, authenticated;
+
+-- Customer order-status read (replaces public SELECT on orders).
+CREATE OR REPLACE FUNCTION public.get_order_status(p_session_token text)
+RETURNS SETOF public.orders
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+  SELECT * FROM public.orders WHERE session_token = p_session_token
+$$;
+REVOKE ALL ON FUNCTION public.get_order_status(text) FROM public;
+GRANT EXECUTE ON FUNCTION public.get_order_status(text) TO anon, authenticated;
+
+-- Rate limiting (fixed window, Postgres-backed).
+CREATE TABLE IF NOT EXISTS public.rate_limits (
+  key          text PRIMARY KEY,
+  count        int         NOT NULL DEFAULT 0,
+  window_start timestamptz NOT NULL DEFAULT now()
+);
+ALTER TABLE public.rate_limits ENABLE ROW LEVEL SECURITY;
+-- No policies: only the SECURITY DEFINER function below can touch it.
+
+CREATE OR REPLACE FUNCTION public.check_rate_limit(p_key text, p_max int, p_window_secs int)
+RETURNS boolean
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+DECLARE
+  v_count int;
+BEGIN
+  INSERT INTO public.rate_limits AS rl (key, count, window_start)
+       VALUES (p_key, 1, now())
+  ON CONFLICT (key) DO UPDATE
+       SET count = CASE WHEN rl.window_start < now() - make_interval(secs => p_window_secs)
+                        THEN 1 ELSE rl.count + 1 END,
+           window_start = CASE WHEN rl.window_start < now() - make_interval(secs => p_window_secs)
+                        THEN now() ELSE rl.window_start END
+  RETURNING count INTO v_count;
+  RETURN v_count <= p_max;
+END;
+$$;
+REVOKE ALL ON FUNCTION public.check_rate_limit(text, int, int) FROM public;
+GRANT EXECUTE ON FUNCTION public.check_rate_limit(text, int, int) TO anon, authenticated;

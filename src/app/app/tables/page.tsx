@@ -139,11 +139,26 @@ export default function TablesPage() {
   };
 
   const printQR = (table: Table) => {
+    // Render the QR locally from the on-page SVG. Previously this sent the
+    // order URL (which contains the table's secret qr_token) to a third-party
+    // service (api.qrserver.com), leaking the token off-site (audit C9).
+    const svg = document.getElementById(`qr-${table.id}`);
+    if (!svg) return;
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const dataUri = 'data:image/svg+xml;base64,' + btoa(svgData);
+
+    // Escape owner-controlled text before injecting into the print document.
+    const esc = (s: string) =>
+      s.replace(/[&<>"]/g, (c) =>
+        ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c] || c
+      );
+
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
 
-    const url = getOrderUrl(table);
-    
+    const title = esc(pub?.name || 'BarTab');
+    const subtitle = `Table ${table.number}${table.name ? ` - ${esc(table.name)}` : ''}`;
+
     printWindow.document.write(`
       <!DOCTYPE html>
       <html>
@@ -168,13 +183,14 @@ export default function TablesPage() {
             h1 { margin: 0 0 10px; color: #5c4934; }
             h2 { margin: 0 0 30px; color: #888; font-weight: normal; }
             p { margin: 20px 0 0; color: #666; }
+            img { width: 300px; height: 300px; }
           </style>
         </head>
         <body>
           <div class="qr-container">
-            <h1>${pub?.name || 'BarTab'}</h1>
-            <h2>Table ${table.number}${table.name ? ` - ${table.name}` : ''}</h2>
-            <img src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(url)}" />
+            <h1>${title}</h1>
+            <h2>${subtitle}</h2>
+            <img src="${dataUri}" alt="QR code" />
             <p>Scan to order</p>
           </div>
           <script>window.onload = () => { window.print(); window.close(); }</script>

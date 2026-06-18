@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
+import { isDemoMode } from '@/lib/demo-mode';
 
 /**
  * Refreshes the Supabase session at the edge and gates access to
@@ -12,17 +13,13 @@ import { NextResponse, type NextRequest } from 'next/server';
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  // Demo mode: skip auth checks. Same logic as src/lib/demo-data.ts:isDemoMode().
-  const demo =
-    !supabaseUrl ||
-    !supabaseAnonKey ||
-    supabaseUrl.includes('placeholder');
-  if (demo) {
+  // Demo mode: skip auth checks (single source of truth — src/lib/demo-mode.ts).
+  if (isDemoMode()) {
     return supabaseResponse;
   }
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
   const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {

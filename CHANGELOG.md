@@ -6,6 +6,53 @@ captures: what was fixed/built, why, and how it was verified.
 
 ---
 
+## Phase 4 — Security hardening (2026-06-18, branch `security-hardening`)
+
+Closes the launch-blocking findings from the security audit. The app's happy
+path was already payment-first and server-validated; the gap was that the
+**database didn't enforce it** — the public anon key could bypass the app
+entirely via PostgREST.
+
+**DB lockdown (`supabase/migrations/0001_security_hardening.sql` + `schema.sql`)**
+- Dropped public `INSERT`/`SELECT` on `orders`/`order_items` (C1, C2) and public
+  `SELECT` on `pubs`/`tables` (C3, C5). Orders are now created only by the Stripe
+  webhook (service role); owners manage their own via owner RLS.
+- Added `get_ordering_context(slug, qr_token)` — resolves pub+table+menu only on a
+  matching token (no enumeration) — and `get_order_status(session_token)` —
+  returns only the caller's own order. Both `SECURITY DEFINER`.
+- `UNIQUE(payment_intent_id)` (C10) + unique active `confirmation_code` (C7);
+  `logo_url` forced https via CHECK (C13).
+- Postgres-backed `check_rate_limit()` + `rate_limits` table (C6) — no new infra.
+
+**Presence / anti-prankster (C4)**
+- New `/api/checkin`: validates a scanned qr_token and mints a signed, 90-min,
+  httpOnly **table-session cookie** (`src/lib/table-session.ts`, HMAC).
+- `/api/stripe/payment-intent` now requires that cookie (matching pub+table),
+  rate-limits per session + IP, enforces a max order value, and uses a crypto
+  confirmation code. Reads moved to the service-role client (anon can't read
+  pubs/tables anymore).
+
+**App rewiring**
+- Customer order page resolves via `get_ordering_context`; status screens poll
+  `get_order_status` (customer realtime dropped — it required public order SELECT;
+  the 3s poll already existed as the reliable path). Bar dashboard realtime is
+  unchanged (authenticated).
+
+**Hardening**
+- Single fail-closed demo flag (`src/lib/demo-mode.ts`) shared by client, server
+  layouts, and middleware — a misconfigured prod deploy now throws instead of
+  silently serving the dashboard auth-less (C8).
+- CSP + security headers in `next.config.ts` (C12).
+- QR printing renders locally instead of leaking the token to `api.qrserver.com` (C9).
+
+**Verification:** `tsc --noEmit` clean; `next build` clean; 66 unit tests pass
+(incl. new `table-session` suite). New gated `tests/e2e/security-rls.spec.ts`
+asserts the anon-key denials + RPC behaviour against a real project. Runtime
+verification against live Supabase still required after applying the migration
+and setting `TABLE_SESSION_SECRET`.
+
+---
+
 ## Phase 3 — Deployment + Stripe Connect (2026-06-16)
 
 Single-day session that took BarTab from "code only" to a fully-functional

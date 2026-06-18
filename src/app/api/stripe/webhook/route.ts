@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
+import crypto from 'crypto';
 import type Stripe from 'stripe';
 import { getStripe, isStripeConfigured } from '@/lib/stripe/server';
-import { createClient as createAdminSupabaseClient } from '@supabase/supabase-js';
+import { createAdminClient } from '@/lib/supabase/admin';
 
 // Stripe sends raw JSON; we MUST NOT have Next.js parse it before we verify
 // the signature, so we read with request.text() and pass the raw string to
@@ -10,23 +11,24 @@ import { createClient as createAdminSupabaseClient } from '@supabase/supabase-js
 
 export const runtime = 'nodejs'; // node, not edge — needs the Stripe SDK
 
-// We use the SERVICE ROLE key here because:
-//   - the webhook arrives unauthenticated (no user cookie)
-//   - we need to INSERT into orders/order_items + UPDATE pubs
-// RLS would block these from an anon client. Service role bypasses RLS.
-// This route never receives input from end users — it only runs in response
-// to Stripe's verified webhooks.
-function getServiceRoleClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!url || !serviceKey) {
-    throw new Error(
-      'Webhook needs NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY'
-    );
-  }
-  return createAdminSupabaseClient(url, serviceKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
+// The webhook uses the SERVICE-ROLE client (createAdminClient, bypasses RLS)
+// because it arrives unauthenticated and must INSERT orders/order_items +
+// UPDATE pubs. It only ever runs in response to a Stripe-signature-verified
+// event, never on raw end-user input.
+
+// 6-digit, crypto-strong confirmation code (replaces Math.random; C7).
+function generateConfirmationCode(): string {
+  return String(crypto.randomInt(100000, 1000000));
+}
+
+// True when a Postgres error is a unique-constraint violation on the given
+// index name. supabase-js surfaces the SQLSTATE in `code` and the index name
+// in `message`/`details`.
+function isUniqueViolation(err: unknown, indexName: string): boolean {
+  const e = err as { code?: string; message?: string; details?: string } | null;
+  if (!e || e.code !== '23505') return false;
+  const haystack = `${e.message ?? ''} ${e.details ?? ''}`;
+  return haystack.includes(indexName);
 }
 
 export async function POST(request: NextRequest) {
@@ -109,7 +111,7 @@ export async function POST(request: NextRequest) {
  * we just mark it paid (Stripe occasionally redelivers webhooks).
  */
 async function handlePaymentIntentSucceeded(pi: Stripe.PaymentIntent) {
-  const sb = getServiceRoleClient();
+  const sb = createAdminClient();
 
   const meta = pi.metadata || {};
   const pubId = meta.pubId;
@@ -162,26 +164,48 @@ async function handlePaymentIntentSucceeded(pi: Stripe.PaymentIntent) {
     0
   );
 
-  // Insert the Order row.
-  const { data: order, error: orderErr } = await sb
-    .from('orders')
-    .insert({
-      pub_id: pubId,
-      table_id: tableId || null,
-      session_token: sessionToken,
-      confirmation_code: confirmationCode,
-      total: totalEuros,
-      notes,
-      status: 'pending',
-      payment_intent_id: pi.id,
-      payment_status: 'paid',
-      paid_at: new Date().toISOString(),
-    })
-    .select()
-    .single();
+  // Insert the Order row. Retry on the rare confirmation-code collision
+  // (idx_orders_active_code_uq) with a fresh code — the customer only ever
+  // sees the persisted code, so regenerating here is invisible to them. A
+  // payment_intent_id collision means a concurrent delivery already created
+  // the order → idempotent success.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let order: any = null;
+  let code = confirmationCode;
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const { data, error: orderErr } = await sb
+      .from('orders')
+      .insert({
+        pub_id: pubId,
+        table_id: tableId || null,
+        session_token: sessionToken,
+        confirmation_code: code,
+        total: totalEuros,
+        notes,
+        status: 'pending',
+        payment_intent_id: pi.id,
+        payment_status: 'paid',
+        paid_at: new Date().toISOString(),
+      })
+      .select()
+      .single();
 
-  if (orderErr || !order) {
+    if (!orderErr && data) {
+      order = data;
+      break;
+    }
+    if (isUniqueViolation(orderErr, 'idx_orders_payment_intent_uq')) {
+      return; // already created by another delivery
+    }
+    if (isUniqueViolation(orderErr, 'idx_orders_active_code_uq')) {
+      code = generateConfirmationCode();
+      continue;
+    }
     console.error('Failed to insert order from webhook', orderErr);
+    return;
+  }
+  if (!order) {
+    console.error('Could not insert order after confirmation-code retries');
     return;
   }
 
@@ -216,7 +240,7 @@ async function handlePaymentIntentFailed(pi: Stripe.PaymentIntent) {
  */
 async function handleAccountUpdated(account: Stripe.Account) {
   if (!account.id) return;
-  const sb = getServiceRoleClient();
+  const sb = createAdminClient();
   await sb
     .from('pubs')
     .update({ stripe_charges_enabled: Boolean(account.charges_enabled) })
@@ -231,7 +255,7 @@ async function handleAccountUpdated(account: Stripe.Account) {
  */
 async function handleAccountDeauthorized(accountId: string | null | undefined) {
   if (!accountId) return;
-  const sb = getServiceRoleClient();
+  const sb = createAdminClient();
   await sb
     .from('pubs')
     .update({

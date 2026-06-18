@@ -143,7 +143,9 @@ export default function OnboardingPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      // Check slug uniqueness
+      // Best-effort slug pre-check. Note: with the RLS lockdown this only sees
+      // the caller's OWN pub, so a clash with another owner's pub is caught by
+      // the DB UNIQUE(slug) constraint in the catch block below (23505).
       const { data: existingPub } = await supabase
         .from('pubs')
         .select('id')
@@ -222,7 +224,13 @@ export default function OnboardingPage() {
       }
     } catch (err) {
       console.error('Onboarding error:', err);
-      setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
+      const code = (err as { code?: string } | null)?.code;
+      if (code === '23505') {
+        // UNIQUE(slug) violation — another pub already uses this URL.
+        setError(`The URL "${slug}" is already taken. Please choose a different name.`);
+      } else {
+        setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
+      }
       setSaving(false);
     }
   }, [saving, saved, supabase, pubName, slug, tableCount, selectedCategories]);

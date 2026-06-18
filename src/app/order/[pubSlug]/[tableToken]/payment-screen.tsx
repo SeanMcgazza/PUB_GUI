@@ -202,15 +202,17 @@ function CheckoutForm({
     const supabase = createClient() as any;
     const startedAt = Date.now();
     while (Date.now() - startedAt < 20_000) {
-      const { data } = await supabase
-        .from('orders')
-        .select('*')
-        .eq('payment_intent_id', paymentIntentId)
-        .eq('pub_id', pubId)
-        .eq('session_token', sessionToken)
-        .maybeSingle();
-      if (data) {
-        onPaid(data as Order);
+      // Read only THIS session's orders (public SELECT on orders was removed);
+      // find the one the webhook created for this payment.
+      const { data } = await supabase.rpc('get_order_status', {
+        p_session_token: sessionToken,
+      });
+      const rows = (data || []) as Order[];
+      const match = rows.find(
+        (o) => o.payment_intent_id === paymentIntentId && o.pub_id === pubId
+      );
+      if (match) {
+        onPaid(match);
         return;
       }
       await new Promise((r) => setTimeout(r, 1000));
