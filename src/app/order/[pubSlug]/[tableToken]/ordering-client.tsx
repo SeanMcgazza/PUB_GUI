@@ -126,6 +126,9 @@ export function OrderingClient({
   sessionToken,
 }: Props) {
   const [cart, setCart] = useState<CartItem[]>([]);
+  // 18+ acknowledgment — required before paying when the cart contains an
+  // age-restricted item. Stores nothing; staff still check ID at the table.
+  const [ageAcknowledged, setAgeAcknowledged] = useState(false);
   const [showCart, setShowCart] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [activeOrder, setActiveOrder] = useState<Order | null>(null);
@@ -422,9 +425,11 @@ export function OrderingClient({
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   const belowMinimum = cartTotal < MIN_ORDER_VALUE;
+  const cartHasAgeRestricted = cart.some((c) => c.menuItem.age_restricted);
+  const ageBlocked = cartHasAgeRestricted && !ageAcknowledged;
 
   const submitOrder = async () => {
-    if (cart.length === 0 || belowMinimum) return;
+    if (cart.length === 0 || belowMinimum || ageBlocked) return;
     // Tap is a user gesture, so this is the moment we're allowed to ask for
     // browser-notification permission. Granted → status-change alerts pop on
     // the customer's lock screen even when the tab is backgrounded.
@@ -460,6 +465,7 @@ export function OrderingClient({
         setActiveOrder(order as unknown as Order);
         setCart([]);
         setOrderNotes('');
+        setAgeAcknowledged(false);
         setShowCart(false);
       } finally {
         setSubmitting(false);
@@ -479,6 +485,7 @@ export function OrderingClient({
     setActiveOrder(order);
     setCart([]);
     setOrderNotes('');
+    setAgeAcknowledged(false);
     setShowPayment(false);
     setShowCart(false);
   };
@@ -938,6 +945,7 @@ export function OrderingClient({
                     sessionToken={sessionToken}
                     orderNotes={orderNotes}
                     total={cartTotal}
+                    ageAcknowledged={ageAcknowledged}
                     onCancel={() => setShowPayment(false)}
                     onPaid={handlePaid}
                   />
@@ -1012,9 +1020,23 @@ export function OrderingClient({
                         {(MIN_ORDER_VALUE - cartTotal).toFixed(2)} more to place order
                       </p>
                     )}
+                    {cartHasAgeRestricted && (
+                      <label className="flex items-start gap-2 mb-3 text-sm text-white/90 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={ageAcknowledged}
+                          onChange={(e) => setAgeAcknowledged(e.target.checked)}
+                          className="mt-0.5 h-4 w-4 accent-amber-500"
+                        />
+                        <span>
+                          This order contains alcohol. I confirm I&apos;m 18 or over
+                          and will show ID when my order arrives.
+                        </span>
+                      </label>
+                    )}
                     <Button
                       onClick={submitOrder}
-                      disabled={submitting || cart.length === 0 || belowMinimum}
+                      disabled={submitting || cart.length === 0 || belowMinimum || ageBlocked}
                       className="w-full bg-primary-gradient hover:opacity-90 text-white py-6 text-lg font-semibold rounded-2xl glow-primary disabled:opacity-50"
                     >
                       {submitting ? (

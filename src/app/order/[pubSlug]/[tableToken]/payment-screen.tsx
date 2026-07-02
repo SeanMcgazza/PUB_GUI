@@ -22,6 +22,7 @@ interface Props {
   sessionToken: string;
   orderNotes: string;
   total: number;
+  ageAcknowledged: boolean;
   onCancel: () => void;
   onPaid: (order: Order) => void;
 }
@@ -57,6 +58,7 @@ export function PaymentScreen({
   sessionToken,
   orderNotes,
   total,
+  ageAcknowledged,
   onCancel,
   onPaid,
 }: Props) {
@@ -81,6 +83,7 @@ export function PaymentScreen({
               quantity: c.quantity,
             })),
             notes: orderNotes,
+            ageAcknowledged,
           }),
         });
         const data = await res.json();
@@ -98,7 +101,7 @@ export function PaymentScreen({
     return () => {
       cancelled = true;
     };
-  }, [pub.slug, table.qr_token, sessionToken, cart, orderNotes]);
+  }, [pub.slug, table.qr_token, sessionToken, cart, orderNotes, ageAcknowledged]);
 
   if (error) {
     return (

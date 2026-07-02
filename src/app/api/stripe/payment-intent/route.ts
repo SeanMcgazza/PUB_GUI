@@ -72,6 +72,7 @@ async function handle(request: NextRequest) {
     sessionToken?: string;
     items?: { menuItemId: string; quantity: number }[];
     notes?: string;
+    ageAcknowledged?: boolean;
   };
   try {
     body = await request.json();
@@ -79,7 +80,7 @@ async function handle(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
-  const { pubSlug, tableToken, sessionToken, items, notes } = body;
+  const { pubSlug, tableToken, sessionToken, items, notes, ageAcknowledged } = body;
   if (!pubSlug || !tableToken || !sessionToken || !items?.length) {
     return NextResponse.json(
       { error: 'Missing pubSlug, tableToken, sessionToken, or items' },
@@ -174,7 +175,7 @@ async function handle(request: NextRequest) {
   const menuItemIds = items.map((i) => i.menuItemId);
   const { data: menuItems, error: menuErr } = await sb
     .from('menu_items')
-    .select('id, name, price, is_available')
+    .select('id, name, price, is_available, age_restricted')
     .in('id', menuItemIds)
     .eq('pub_id', pub.id);
   if (menuErr || !menuItems) {
@@ -185,13 +186,13 @@ async function handle(request: NextRequest) {
   }
 
   const itemsById = new Map(
-    (menuItems as { id: string; name: string; price: number; is_available: boolean }[]).map(
+    (menuItems as { id: string; name: string; price: number; is_available: boolean; age_restricted: boolean }[]).map(
       (m) => [m.id, m]
     )
   );
 
   // Build the validated line items.
-  const validated: { menuItemId: string; name: string; price: number; quantity: number }[] = [];
+  const validated: { menuItemId: string; name: string; price: number; quantity: number; ageRestricted: boolean }[] = [];
   for (const requested of items) {
     const m = itemsById.get(requested.menuItemId);
     if (!m) {
@@ -212,7 +213,24 @@ async function handle(request: NextRequest) {
       name: m.name,
       price: m.price,
       quantity: qty,
+      ageRestricted: Boolean(m.age_restricted),
     });
+  }
+
+  // Age gate: if the cart contains any 18+ item, the customer must have ticked
+  // the acknowledgment client-side. Enforced here too so a tampered client
+  // can't skip it. No personal data is collected — staff still check ID at the
+  // table; this is just the required acknowledgment.
+  const hasAgeRestricted = validated.some((v) => v.ageRestricted);
+  if (hasAgeRestricted && ageAcknowledged !== true) {
+    return NextResponse.json(
+      {
+        error:
+          'This order contains age-restricted items. Please confirm you are 18 or over and will show ID on request.',
+        code: 'AGE_ACK_REQUIRED',
+      },
+      { status: 400 }
+    );
   }
 
   const totalEuros = validated.reduce(

@@ -40,38 +40,38 @@ export const DEMO_CATEGORIES = [
 
 const DEFAULT_MENU_ITEMS = [
   // Draught Beer
-  { id: 'm1', pub_id: DEMO_PUB.id, category_id: 'cat1', name: 'Guinness', description: 'The black stuff. 568ml pint.', price: 5.80, is_available: true, image_url: '/demo-menu/guinness.jpg' },
-  { id: 'm2', pub_id: DEMO_PUB.id, category_id: 'cat1', name: 'Heineken', description: 'Crisp lager. 568ml pint.', price: 5.50, is_available: true, image_url: null },
-  { id: 'm3', pub_id: DEMO_PUB.id, category_id: 'cat1', name: 'Smithwicks', description: 'Irish red ale. 568ml pint.', price: 5.20, is_available: true, image_url: null },
-  { id: 'm4', pub_id: DEMO_PUB.id, category_id: 'cat1', name: 'Rockshore', description: 'Refreshing lager. 568ml pint.', price: 5.00, is_available: true, image_url: null },
+  { id: 'm1', pub_id: DEMO_PUB.id, category_id: 'cat1', name: 'Guinness', description: 'The black stuff. 568ml pint.', price: 5.80, is_available: true, image_url: '/demo-menu/guinness.jpg', age_restricted: true },
+  { id: 'm2', pub_id: DEMO_PUB.id, category_id: 'cat1', name: 'Heineken', description: 'Crisp lager. 568ml pint.', price: 5.50, is_available: true, image_url: null, age_restricted: true },
+  { id: 'm3', pub_id: DEMO_PUB.id, category_id: 'cat1', name: 'Smithwicks', description: 'Irish red ale. 568ml pint.', price: 5.20, is_available: true, image_url: null, age_restricted: true },
+  { id: 'm4', pub_id: DEMO_PUB.id, category_id: 'cat1', name: 'Rockshore', description: 'Refreshing lager. 568ml pint.', price: 5.00, is_available: true, image_url: null, age_restricted: true },
   
   // Bottled Beer
-  { id: 'm5', pub_id: DEMO_PUB.id, category_id: 'cat2', name: 'Corona', description: '330ml bottle', price: 5.00, is_available: true, image_url: null },
-  { id: 'm6', pub_id: DEMO_PUB.id, category_id: 'cat2', name: 'Budweiser', description: '330ml bottle', price: 4.80, is_available: true, image_url: null },
-  { id: 'm7', pub_id: DEMO_PUB.id, category_id: 'cat2', name: 'Hop House 13', description: '330ml bottle', price: 5.20, is_available: true, image_url: null },
+  { id: 'm5', pub_id: DEMO_PUB.id, category_id: 'cat2', name: 'Corona', description: '330ml bottle', price: 5.00, is_available: true, image_url: null, age_restricted: true },
+  { id: 'm6', pub_id: DEMO_PUB.id, category_id: 'cat2', name: 'Budweiser', description: '330ml bottle', price: 4.80, is_available: true, image_url: null, age_restricted: true },
+  { id: 'm7', pub_id: DEMO_PUB.id, category_id: 'cat2', name: 'Hop House 13', description: '330ml bottle', price: 5.20, is_available: true, image_url: null, age_restricted: true },
   
   // Spirits
-  { id: 'm8', pub_id: DEMO_PUB.id, category_id: 'cat3', name: 'Jameson', description: 'Irish whiskey. Single measure.', price: 5.50, is_available: true, image_url: null },
-  { id: 'm9', pub_id: DEMO_PUB.id, category_id: 'cat3', name: 'Jameson Double', description: 'Irish whiskey. Double measure.', price: 9.50, is_available: true, image_url: null },
-  { id: 'm10', pub_id: DEMO_PUB.id, category_id: 'cat3', name: 'Vodka & Mixer', description: 'Smirnoff with your choice of mixer', price: 6.50, is_available: true, image_url: null },
-  { id: 'm11', pub_id: DEMO_PUB.id, category_id: 'cat3', name: 'Gin & Tonic', description: 'Gordons with Schweppes tonic', price: 7.00, is_available: true, image_url: null },
+  { id: 'm8', pub_id: DEMO_PUB.id, category_id: 'cat3', name: 'Jameson', description: 'Irish whiskey. Single measure.', price: 5.50, is_available: true, image_url: null, age_restricted: true },
+  { id: 'm9', pub_id: DEMO_PUB.id, category_id: 'cat3', name: 'Jameson Double', description: 'Irish whiskey. Double measure.', price: 9.50, is_available: true, image_url: null, age_restricted: true },
+  { id: 'm10', pub_id: DEMO_PUB.id, category_id: 'cat3', name: 'Vodka & Mixer', description: 'Smirnoff with your choice of mixer', price: 6.50, is_available: true, image_url: null, age_restricted: true },
+  { id: 'm11', pub_id: DEMO_PUB.id, category_id: 'cat3', name: 'Gin & Tonic', description: 'Gordons with Schweppes tonic', price: 7.00, is_available: true, image_url: null, age_restricted: true },
   
   // Wine
-  { id: 'm12', pub_id: DEMO_PUB.id, category_id: 'cat4', name: 'House Red', description: '175ml glass', price: 6.50, is_available: true, image_url: null },
-  { id: 'm13', pub_id: DEMO_PUB.id, category_id: 'cat4', name: 'House White', description: '175ml glass', price: 6.50, is_available: true, image_url: null },
-  { id: 'm14', pub_id: DEMO_PUB.id, category_id: 'cat4', name: 'Prosecco', description: '200ml bottle', price: 8.00, is_available: true, image_url: null },
+  { id: 'm12', pub_id: DEMO_PUB.id, category_id: 'cat4', name: 'House Red', description: '175ml glass', price: 6.50, is_available: true, image_url: null, age_restricted: true },
+  { id: 'm13', pub_id: DEMO_PUB.id, category_id: 'cat4', name: 'House White', description: '175ml glass', price: 6.50, is_available: true, image_url: null, age_restricted: true },
+  { id: 'm14', pub_id: DEMO_PUB.id, category_id: 'cat4', name: 'Prosecco', description: '200ml bottle', price: 8.00, is_available: true, image_url: null, age_restricted: true },
   
   // Soft Drinks
-  { id: 'm15', pub_id: DEMO_PUB.id, category_id: 'cat5', name: 'Coca Cola', description: '330ml', price: 3.00, is_available: true, image_url: null },
-  { id: 'm16', pub_id: DEMO_PUB.id, category_id: 'cat5', name: 'Diet Coke', description: '330ml', price: 3.00, is_available: true, image_url: null },
-  { id: 'm17', pub_id: DEMO_PUB.id, category_id: 'cat5', name: 'Club Orange', description: '330ml', price: 3.00, is_available: true, image_url: null },
-  { id: 'm18', pub_id: DEMO_PUB.id, category_id: 'cat5', name: 'Red Bull', description: '250ml can', price: 4.00, is_available: true, image_url: null },
+  { id: 'm15', pub_id: DEMO_PUB.id, category_id: 'cat5', name: 'Coca Cola', description: '330ml', price: 3.00, is_available: true, image_url: null, age_restricted: false },
+  { id: 'm16', pub_id: DEMO_PUB.id, category_id: 'cat5', name: 'Diet Coke', description: '330ml', price: 3.00, is_available: true, image_url: null, age_restricted: false },
+  { id: 'm17', pub_id: DEMO_PUB.id, category_id: 'cat5', name: 'Club Orange', description: '330ml', price: 3.00, is_available: true, image_url: null, age_restricted: false },
+  { id: 'm18', pub_id: DEMO_PUB.id, category_id: 'cat5', name: 'Red Bull', description: '250ml can', price: 4.00, is_available: true, image_url: null, age_restricted: false },
   
   // Food
-  { id: 'm19', pub_id: DEMO_PUB.id, category_id: 'cat6', name: 'Loaded Fries', description: 'Crispy fries with cheese, bacon & scallions', price: 8.50, is_available: true, image_url: null },
-  { id: 'm20', pub_id: DEMO_PUB.id, category_id: 'cat6', name: 'Chicken Wings', description: '8 wings with your choice of sauce', price: 12.00, is_available: true, image_url: null },
-  { id: 'm21', pub_id: DEMO_PUB.id, category_id: 'cat6', name: 'Fish & Chips', description: 'Beer-battered cod with chunky chips', price: 15.00, is_available: true, image_url: null },
-  { id: 'm22', pub_id: DEMO_PUB.id, category_id: 'cat6', name: 'Beef Burger', description: '6oz patty, bacon, cheese, brioche bun', price: 14.50, is_available: true, image_url: null },
+  { id: 'm19', pub_id: DEMO_PUB.id, category_id: 'cat6', name: 'Loaded Fries', description: 'Crispy fries with cheese, bacon & scallions', price: 8.50, is_available: true, image_url: null, age_restricted: false },
+  { id: 'm20', pub_id: DEMO_PUB.id, category_id: 'cat6', name: 'Chicken Wings', description: '8 wings with your choice of sauce', price: 12.00, is_available: true, image_url: null, age_restricted: false },
+  { id: 'm21', pub_id: DEMO_PUB.id, category_id: 'cat6', name: 'Fish & Chips', description: 'Beer-battered cod with chunky chips', price: 15.00, is_available: true, image_url: null, age_restricted: false },
+  { id: 'm22', pub_id: DEMO_PUB.id, category_id: 'cat6', name: 'Beef Burger', description: '6oz patty, bacon, cheese, brioche bun', price: 14.50, is_available: true, image_url: null, age_restricted: false },
 ];
 
 const STORAGE_KEY = 'bartab_demo_menu';

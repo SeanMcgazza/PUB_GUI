@@ -11,6 +11,7 @@ const sampleItem: MenuItem = {
   price: 5.5,
   image_url: null,
   is_available: true,
+  age_restricted: true,
   created_at: new Date().toISOString(),
 };
 

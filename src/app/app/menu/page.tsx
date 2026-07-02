@@ -380,6 +380,11 @@ function MenuItemRow({
               OFF
             </span>
           )}
+          {item.age_restricted && (
+            <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-xs rounded font-medium">
+              18+
+            </span>
+          )}
         </div>
         {item.description && (
           <p className="text-sm text-muted-foreground truncate">
@@ -433,7 +438,8 @@ function ItemDialog({
   const [description, setDescription] = useState(item?.description || '');
   const [price, setPrice] = useState(item?.price?.toString() || '');
   const [categoryId, setCategoryId] = useState(item?.category_id || '');
-  const [saving, setSaving] = useState(false);
+  const [ageRestricted, setAgeRestricted] = useState(item?.age_restricted ?? false);
+  const [saving, setSaving] = useState(false)
   const [error, setError] = useState('');
 
   // Sync local form state when the `item` prop changes. Without this, opening
@@ -444,6 +450,7 @@ function ItemDialog({
     setDescription(item?.description || '');
     setPrice(item?.price?.toString() || '');
     setCategoryId(item?.category_id || '');
+    setAgeRestricted(item?.age_restricted ?? false);
     setError('');
   }, [item]);
 
@@ -470,6 +477,7 @@ function ItemDialog({
             description: description || null,
             price: priceNum,
             category_id: categoryId || null,
+            age_restricted: ageRestricted,
           } as never);
         } else {
           DemoMenuState.addItem({
@@ -480,6 +488,7 @@ function ItemDialog({
             price: priceNum,
             category_id: categoryId || null,
             is_available: true,
+            age_restricted: ageRestricted,
             image_url: null,
           } as never);
         }
@@ -496,6 +505,7 @@ function ItemDialog({
         description: description || null,
         price: priceNum,
         category_id: categoryId || null,
+        age_restricted: ageRestricted,
       };
 
       if (item) {
@@ -580,6 +590,21 @@ function ItemDialog({
               ))}
             </select>
           </div>
+        </div>
+        <div className="flex items-center justify-between rounded-lg border p-3">
+          <div>
+            <Label htmlFor="age_restricted" className="font-medium">
+              Age restricted (18+)
+            </Label>
+            <p className="text-sm text-muted-foreground">
+              Staff will be prompted to check ID at the table for orders with this item.
+            </p>
+          </div>
+          <Switch
+            id="age_restricted"
+            checked={ageRestricted}
+            onCheckedChange={setAgeRestricted}
+          />
         </div>
         <div className="flex justify-end gap-2 pt-4">
           <Button type="button" variant="outline" onClick={onClose}>

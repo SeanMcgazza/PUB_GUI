@@ -150,6 +150,7 @@ async function handlePaymentIntentSucceeded(pi: Stripe.PaymentIntent) {
     name: string;
     price: number;
     quantity: number;
+    ageRestricted?: boolean;
   };
   let items: ValidatedItem[];
   try {
@@ -163,6 +164,12 @@ async function handlePaymentIntentSucceeded(pi: Stripe.PaymentIntent) {
     (sum, i) => sum + i.price * i.quantity,
     0
   );
+
+  // If any line is age-restricted, the order needs a staff ID check at handoff.
+  // No personal data is stored — just this status + a timestamp when decided.
+  const idCheckStatus = items.some((i) => i.ageRestricted)
+    ? 'pending'
+    : 'not_required';
 
   // Insert the Order row. Retry on the rare confirmation-code collision
   // (idx_orders_active_code_uq) with a fresh code — the customer only ever
@@ -183,6 +190,7 @@ async function handlePaymentIntentSucceeded(pi: Stripe.PaymentIntent) {
         total: totalEuros,
         notes,
         status: 'pending',
+        id_check_status: idCheckStatus,
         payment_intent_id: pi.id,
         payment_status: 'paid',
         paid_at: new Date().toISOString(),
