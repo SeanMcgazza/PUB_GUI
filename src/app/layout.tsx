@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Inter, Lora } from 'next/font/google';
+import { Inter, Lora, Playfair_Display } from 'next/font/google';
 import './globals.css';
 
 // Body / UI font — geometric sans-serif. Maps to var(--font-inter).
@@ -15,6 +15,15 @@ const lora = Lora({
   variable: '--font-lora',
   subsets: ['latin'],
   weight: ['400', '500', '600', '700'],
+  display: 'swap',
+});
+
+// Editorial heading serif for the marketing site. display:'swap' avoids a
+// layout-shift/FOIT while Playfair loads.
+const playfair = Playfair_Display({
+  variable: '--font-playfair',
+  subsets: ['latin'],
+  weight: ['400', '500'],
   display: 'swap',
 });
 
@@ -34,7 +43,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} ${lora.variable} antialiased`}>
+      <body className={`${inter.variable} ${lora.variable} ${playfair.variable} antialiased`}>
         {children}
       </body>
     </html>

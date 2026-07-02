@@ -247,3 +247,37 @@
 }
 .urgency-warn { animation: urgency-amber 1.6s ease-in-out infinite; }
 .urgency-danger { animation: urgency-red 1.2s ease-in-out infinite; }
+
+/* ==========================================================================
+   Marketing "gateway" theme — scoped, light, editorial.
+   Applied via <div class="site-theme"> on the public site (landing, login,
+   signup) ONLY. Overrides the --theme-* tokens so shared components (Card,
+   Input, Button) re-skin to the calm slate/teal palette without touching the
+   dark customer app or bar dashboard.
+   ========================================================================== */
+.site-theme {
+  --theme-surface-base: #F9F7F5;   /* warm off-white page */
+  --theme-surface-card: #FFFFFF;   /* practitioner-style cards */
+  --theme-surface-card-hover: #F3F1EE;
+  --theme-surface-elevated: #FFFFFF;
+  --theme-text-primary: #1A1D1E;   /* body copy */
+  --theme-text-muted: #5B6063;
+  --theme-text-subtle: #A8B5B1;    /* dividers / subtle text */
+  --theme-primary: #2D3A4B;        /* deep slate — primary actions/headers */
+  --theme-primary-glow: #3B4A5E;
+  --theme-primary-deep: #1F2A38;
+  --theme-border-glass: #E5E7EB;   /* feather-light hairline */
+  --theme-border-strong: #D8DCDF;
+  --theme-radius: 0.75rem;
+  --theme-radius-sm: 0.5rem;
+  --theme-radius-lg: 1rem;
+  --theme-font-heading: var(--font-playfair), Georgia, serif;
+  background: var(--theme-surface-base);
+  color: var(--theme-text-primary);
+}
+
+/* Editorial serif — Playfair Display, marketing headings. */
+.font-display {
+  font-family: var(--font-playfair), Georgia, serif;
+  font-weight: 400;
+}

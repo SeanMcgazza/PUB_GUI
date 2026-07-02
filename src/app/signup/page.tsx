@@ -70,12 +70,12 @@ export default function SignupPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-atmosphere flex items-center justify-center p-4">
+      <div className="site-theme min-h-screen bg-[#F9F7F5] flex items-center justify-center p-4">
         <div className="w-full max-w-md text-center">
           <div className="w-20 h-20 bg-[color:var(--theme-success)]/15 rounded-full flex items-center justify-center mx-auto mb-6">
             <Check className="w-10 h-10 text-[color:var(--theme-success)]" />
           </div>
-          <h1 className="text-2xl font-bold text-foreground mb-2">Check your email! 📧</h1>
+          <h1 className="font-display text-3xl text-[#2D3A4B] mb-2">Check your email</h1>
           <p className="text-muted-foreground mb-6">
             We&apos;ve sent a confirmation link to <strong>{email}</strong>. 
             Click it to activate your account.
@@ -91,16 +91,16 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-atmosphere flex items-center justify-center p-4">
+    <div className="site-theme min-h-screen bg-[#F9F7F5] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2">
-            <div className="p-3 bg-amber-600 rounded-2xl">
+            <div className="p-3 bg-[#2D3A4B] rounded-2xl">
               <Beer className="w-7 h-7 text-white" />
             </div>
           </Link>
-          <h1 className="text-2xl font-bold text-foreground mt-4">Create your pub</h1>
+          <h1 className="font-display text-3xl text-[#2D3A4B] mt-4">Create your pub</h1>
           <p className="text-muted-foreground mt-1">Start taking orders in minutes</p>
         </div>
 
@@ -199,7 +199,7 @@ export default function SignupPage() {
               <Button
                 type="submit"
                 disabled={!validation.isValid || loading}
-                className="w-full bg-amber-600 hover:bg-amber-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-[#2D3A4B] hover:bg-[#1F2A38] text-white disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <>
@@ -219,7 +219,7 @@ export default function SignupPage() {
 
         <p className="text-center text-sm text-muted-foreground mt-6">
           Already have an account?{' '}
-          <Link href="/login" className="text-amber-600 hover:text-amber-700 font-medium">
+          <Link href="/login" className="text-[#5D7A7D] hover:text-[#4A6265] font-medium">
             Sign in
           </Link>
         </p>
