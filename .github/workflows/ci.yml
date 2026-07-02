@@ -1,0 +1,38 @@
+name: CI
+
+# Runs the same checks the pre-commit hook runs, but on the server where they
+# can't be skipped with `git commit --no-verify`. Keeps the security/unit
+# suite honest on every push and PR.
+
+on:
+  push:
+    branches: [master, bartab-nextjs, security-hardening, staff-approval-checkin]
+  pull_request:
+
+# Cancel superseded runs on the same ref to save minutes.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit tests
+        run: npm test
