@@ -1,146 +1,73 @@
-# ChairTime - Simple Salon Booking
+# BarTab — QR Ordering for Pubs
 
-## 🎯 Core Features (Simple & Focused)
+## What it is
 
-### Booking & Calendar
-- ✅ Online booking page (customers book 24/7)
-- ✅ Visual calendar (day/week view)
-- ✅ Real-time availability
-- ✅ Booking confirmations
-- ✅ Easy reschedule/cancel
+BarTab turns every table into a self-service bar. The customer scans a QR code,
+sees the pub's live menu, orders, and pays by card in their own phone browser.
+The payment goes **straight to the pub's Stripe account**, and the order appears
+on the bar's dashboard with a confirmation code the moment it's paid.
 
-### Client Management
-- ✅ Client database (auto-created from bookings)
-- ✅ Booking history per client
-- ✅ Client notes & preferences
-- ✅ "Days since last visit" tracking
-- ✅ Birthday tracking
+No customer app to download. No tab to open and forget. No card left behind the
+bar. Just scan, order, pay.
 
-### Loyalty & Retention
-- ✅ Digital loyalty program (visits → rewards)
-- ✅ Referral codes (client refers friend → both get discount)
-- ✅ Birthday discounts
-- ✅ Rebooking reminders
-- ✅ "We miss you" alerts (clients gone 60+ days)
+## Who it's for
 
-### Notifications
-- ✅ In-app notifications (instant)
-- 🔜 Email confirmations & reminders
-- 🔜 WhatsApp messages
+Pubs, bars, and beer gardens — especially at peak times when the queue at the
+bar is the bottleneck on revenue. Best fit:
 
-### Business Tools
-- ✅ Service & pricing management
-- ✅ Daily/weekly revenue tracking
-- ✅ No-show tracking
-- ✅ QR code for booking page
-- ✅ Shareable booking link
+- Busy venues where customers wait too long to get served
+- Table-service or beer-garden setups where staff can't easily reach everyone
+- Owners who want card payments to land in their own account with no middleman
+  holding the funds
 
----
+## The problem it solves
 
-## 💬 5 Sales Pitches
+> Every minute a thirsty customer spends queuing is a drink they didn't buy.
 
-### 1. "Stop Losing Money to No-Shows"
-> "The average salon loses €3,000-5,000/year to no-shows. ChairTime sends automatic reminders so clients actually show up. One saved no-show pays for 6 months of ChairTime."
+- Long bar queues cap how much a full room can actually spend.
+- Staff spend the rush taking and running orders instead of pouring.
+- Paper tabs and cards-behind-the-bar cause disputes and walked tabs.
 
-**The math:**
-- Average appointment: €40
-- No-shows per month: 8-10
-- Lost revenue: €320-400/month
-- ChairTime cost: €29-59/month
-- **ROI: 5-10x return**
+BarTab lets the room keep ordering while staff keep pouring, and every order is
+prepaid before it reaches the bar.
 
----
+## How it works
 
-### 2. "Your Clients Book at 10pm. Are You There?"
-> "47% of salon bookings happen outside business hours. Without online booking, you're losing half your potential customers to competitors. ChairTime works while you sleep."
+**For the customer**
+1. Scan the QR on the table.
+2. Browse the menu (only what's marked available shows).
+3. Add to cart, pay by card.
+4. Get a confirmation code to show or call out at the bar.
 
-**The reality:**
-- Phone calls during haircuts = annoyed clients
-- Missed calls = lost bookings
-- Online booking = 24/7 revenue
-- **"Book anytime" = more bookings**
+**For the bar**
+1. Orders appear on the `/app` dashboard in real time, already paid.
+2. Move each order through pending → preparing → ready → collected.
+3. Manage the menu, tables/QRs, and Stripe payouts from the same dashboard.
+4. Optionally require staff to **approve a table's check-in** before it can
+   order — approval happens before payment, so a declined table is never charged.
 
----
+## Why prepaid-first matters
 
-### 3. "Turn One Client Into Three"
-> "Happy clients tell friends. ChairTime's referral program gives them a reason to. Sarah refers Emma, both get 10% off. Emma refers Kate. One client becomes three—automatically."
+The order row is only created after Stripe confirms the payment. That single
+design choice removes a whole class of problems: no unpaid orders, no spoofed
+orders from someone poking the API, no walked tabs, and no reconciling "who
+actually paid" at the end of the night.
 
-**How it works:**
-- Every client gets a unique referral code
-- Friend books with code → both get discount
-- You get new clients without spending on ads
-- **Word of mouth, supercharged**
+## Money
+
+- Card payments use **Stripe Connect destination charges** — funds settle
+  directly into the pub's connected Stripe account.
+- The platform fee is currently **€0**; the pub receives the full amount minus
+  Stripe's standard processing fee.
+- Minimum and maximum order values are enforced server-side.
+
+## Status
+
+Working end-to-end in Stripe **test mode** on the live demo. Going live needs
+Stripe business verification and a live-key swap — the code is already
+live-ready. See [`SUPABASE_SETUP.md`](SUPABASE_SETUP.md) and
+[`CHANGELOG.md`](CHANGELOG.md) for detail.
 
 ---
 
-### 4. "They'll Come Back Without You Chasing Them"
-> "Most salons lose clients because they simply forget to rebook. ChairTime automatically reminds them: 'Hi Sarah, it's been 6 weeks—time for a trim?' One text = one booking."
-
-**The problem:**
-- Clients forget
-- You're too busy to call everyone
-- They go somewhere else
-
-**The solution:**
-- Automatic rebooking reminders
-- "Days since last visit" tracking
-- **Set it and forget it**
-
----
-
-### 5. "Loyalty That Actually Works"
-> "Paper punch cards get lost. Apps get deleted. ChairTime tracks loyalty automatically—no cards, no fuss. After 10 visits, Sarah gets 20% off. She feels valued. She keeps coming back."
-
-**Why it works:**
-- Zero effort for clients
-- Automatic tracking
-- Rewards feel earned
-- **Retention without the admin**
-
----
-
-## 🧮 The Business Case
-
-### For a salon with 100 clients/month:
-
-| Without ChairTime | With ChairTime |
-|-------------------|----------------|
-| 10 no-shows = €400 lost | 2 no-shows = €80 lost |
-| 0 referrals | 5 referrals = €200 new revenue |
-| 20% rebooking rate | 45% rebooking rate |
-| Paper diary chaos | Everything in one place |
-
-**Net gain: €500+/month**
-**ChairTime cost: €29-59/month**
-**ROI: 10x+**
-
----
-
-## 🗣️ One-Liner Pitches
-
-1. "Online booking that works while you sleep"
-2. "Stop losing clients to no-shows"
-3. "Turn happy clients into your sales team"
-4. "Loyalty programs without the paperwork"
-5. "The booking system that pays for itself"
-
----
-
-## 🎯 Target Customer
-
-**Ideal salon:**
-- 1-3 staff
-- 50-200 bookings/month
-- Currently using paper diary or basic calendar
-- Frustrated with no-shows
-- Wants to grow but can't afford receptionist
-- Active on WhatsApp (Irish market)
-
-**Not for:**
-- Large chains (need enterprise features)
-- Spas with complex treatments
-- Salons happy with current system
-
----
-
-*"Simple booking for busy salons"*
+*"Scan. Order. Pay. Keep the room drinking."*

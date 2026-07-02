@@ -1,183 +1,89 @@
-# ChairTime - Feature Roadmap
+# BarTab — Features & Roadmap
 
-## Core Philosophy
-**Keep it simple. Book, organise, notify.**
-Target: Small salons/barbers who want easy, not enterprise complexity.
+## Core philosophy
+**Scan, order, pay — prepaid-first.** The bar never handles an unpaid order, and
+the money goes straight to the pub. Keep it simple for the customer (no app) and
+honest at the database level (not just the UI).
 
 ---
 
-## ✅ MVP (Current)
-- [x] Service management
-- [x] Online booking page
-- [x] Calendar view
-- [x] Client database
-- [x] Booking management (confirm/cancel/complete)
-- [x] Real-time notifications (polling)
+## ✅ Built (current)
+
+### Customer ordering
+- [x] QR → table-scoped ordering page (`/order/{pubSlug}/{tableToken}`)
+- [x] Live menu with categories; unavailable items hidden
+- [x] Cart with per-item quantities
+- [x] Card payment via Stripe (Payment Element)
+- [x] Server-enforced min / max order value
+- [x] Confirmation code to show / call out at the bar
+- [x] Order status updates (polling + realtime), with vibrate/chime/banner
+
+### Payments
+- [x] Stripe Connect onboarding for pubs (destination charges)
+- [x] Funds settle directly to the pub's connected account
+- [x] Order created only on signature-verified `payment_intent.succeeded` webhook
+- [x] Idempotent order creation (unique `payment_intent_id`)
+- [x] Connected-account status synced via `account.updated` webhook
+
+### Bar dashboard (`/app`)
+- [x] Owner auth (Supabase)
+- [x] Real-time orders board with status workflow
+- [x] Menu editor (categories, items, availability, pricing)
+- [x] Table + QR code management
+- [x] Settings (pub profile, Stripe payouts)
 - [x] Dashboard stats
 
----
+### Staff-approved check-in (opt-in)
+- [x] Per-pub toggle (`require_checkin_approval`)
+- [x] Customer "waiting for staff" gate; approval happens before payment
+- [x] Staff Approve/Reject panel on the dashboard (realtime + poll)
 
-## 🎯 Phase 1: Production Ready
-*Required for real-world use*
+### Security & hardening
+- [x] RLS lockdown — no public read/write on orders/pubs/tables
+- [x] `SECURITY DEFINER` RPCs with no token enumeration
+- [x] Server-side price refetch (never trust client prices)
+- [x] HMAC-signed, short-lived table-session cookie (presence gate)
+- [x] Postgres-backed rate limiting (per IP + per session)
+- [x] Crypto-strong, unique-per-active-order confirmation codes
+- [x] `logo_url` forced https (CSS-injection guard)
 
-### Authentication & Database
-- [ ] Clerk authentication (salon owner login)
-- [ ] Supabase database (persistent data)
-- [ ] Multi-tenancy (each salon = separate account)
-- [ ] Unique booking URLs (/book/marys-salon)
-
-### Notifications
-- [ ] Email confirmations (Resend)
-- [ ] Email reminders (24h before)
-- [ ] Browser push notifications
-
----
-
-## 🚀 Phase 2: Growth Features
-
-### WhatsApp Integration
-- [ ] Booking confirmations via WhatsApp
-- [ ] Appointment reminders via WhatsApp
-- [ ] Rebooking prompts ("Time for your next cut?")
-- [ ] WhatsApp booking link in messages
-
-### Loyalty & Retention
-- [ ] Digital loyalty program (X visits = Y% off)
-- [ ] Referral system (unique codes, track referrals)
-- [ ] Birthday discounts (auto-send)
-- [ ] "We miss you" campaigns (60+ days since visit)
-
-### Revenue Features
-- [ ] Tipping (at checkout + post-visit link)
-- [ ] No-show protection (card on file)
-- [ ] Deposits for high-value services
-- [ ] Package deals (buy 5, get 1 free)
-- [ ] Gift cards (digital)
+### Engineering
+- [x] Demo mode (in-memory, no keys required)
+- [x] Unit tests (Vitest) + e2e tests (Playwright, incl. RLS spec)
+- [x] Husky pre-commit (lint-staged + typecheck + tests)
+- [x] GitHub Actions CI
 
 ---
 
-## 💎 Phase 3: Premium Features
-
-### Communications
-- [ ] SMS notifications (Twilio)
-- [ ] Pre-care emails (per service type)
-- [ ] Post-care emails (aftercare tips)
-- [ ] Review request automation
-- [ ] Custom email templates
-
-### Online Store
-- [ ] Product catalog
-- [ ] Shopping cart
-- [ ] Stripe checkout
-- [ ] Inventory management
-- [ ] Click & collect
-
-### Business Intelligence
-- [ ] Revenue reports
-- [ ] Staff performance tracking
-- [ ] Peak hours analysis
-- [ ] Client lifetime value
-- [ ] Cancellation analytics
-- [ ] No-show tracking
-
-### Advanced Scheduling
-- [ ] Multi-staff support
-- [ ] Staff availability/holidays
-- [ ] Recurring appointments
-- [ ] Waitlist when fully booked
-- [ ] Smart time suggestions
+## 🎯 Next: production launch
+- [ ] Switch Stripe to **live mode** (business verification, live keys)
+- [ ] Real domain + T&Cs / Privacy Policy
+- [ ] Run migrations `0001`/`0002` against the production Supabase project
+- [ ] Post-migration runtime verification against live Supabase
 
 ---
 
-## 🌟 Differentiators (Ideas)
-
-### WhatsApp-First (Irish Market)
-- Book via WhatsApp chat
-- Automated responses
-- Send booking link via WhatsApp
-- WhatsApp reminder preference
-
-### Instagram Integration
-- "Book Now" button setup guide
-- Instagram bio link generator
-- Share availability to Stories
-- Post-visit photo requests
-
-### Zero Friction
-- 5-minute setup
-- Pre-filled service templates (haircuts, colours, etc.)
-- QR code for booking page
-- One-tap rebooking for clients
-
-### Irish-Specific
-- Irish payment methods
-- GDPR compliant
-- Irish support hours
-- Local hosting (EU)
+## 🚀 Later: growth
+- [ ] Order-ready push/SMS notification to the customer
+- [ ] Tipping at checkout
+- [ ] Table-status view for staff (which tables are active)
+- [ ] Basic sales reporting (revenue by day, top items, peak hours)
+- [ ] Multi-staff logins per pub
+- [ ] Allergen / dietary tags on menu items
 
 ---
 
-## 💰 Pricing Tiers (Proposed)
+## Technical stack
 
-### Free Trial
-- 14 days full access
-- No card required
-
-### Starter - €29/month
-- Unlimited bookings
-- Client database
-- Email notifications
-- Calendar & dashboard
-- 1 staff member
-
-### Growth - €59/month
-- Everything in Starter
-- WhatsApp notifications
-- Loyalty program
-- Referrals
-- Tips
-- Up to 3 staff
-
-### Pro - €99/month
-- Everything in Growth
-- Online store
-- SMS notifications
-- Advanced analytics
-- Multi-location
-- Unlimited staff
-- Priority support
-
----
-
-## Technical Stack
-
-### Current
-- Next.js 16
-- Zustand (local state)
-- Tailwind CSS
+**Current**
+- Next.js 16 (App Router), React 19, TypeScript
+- Supabase (Postgres + Auth + Realtime)
+- Stripe Connect
+- Tailwind CSS 4 + Radix UI
+- Zustand (local UI state)
+- Vitest + Playwright, Husky, GitHub Actions
 - Vercel hosting
 
-### Planned
-- Clerk (auth)
-- Supabase (database)
-- Resend (email)
-- Twilio (SMS/WhatsApp)
-- Stripe (payments)
-
 ---
 
-## Competitor Analysis
-
-| Feature | ChairTime | Fresha | Booksy | Vagaro |
-|---------|-----------|--------|--------|--------|
-| Free tier | ✅ | ✅ | ❌ | ❌ |
-| WhatsApp | 🎯 | ❌ | ❌ | ❌ |
-| Simple UX | 🎯 | ⚠️ | ⚠️ | ❌ |
-| Irish focus | 🎯 | ❌ | ❌ | ❌ |
-| Online store | 🔜 | ✅ | ✅ | ✅ |
-
-**Our edge:** WhatsApp-first + Dead simple + Irish market focus
-
----
-
-*Last updated: 2026-01-30*
+*Last updated: 2026-07-02*
