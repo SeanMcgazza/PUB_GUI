@@ -19,6 +19,9 @@ const eslintConfig = defineConfig([
       // The codebase has many `useEffect(() => { fetchX(); }, [fetchX])` patterns
       // that legitimately fetch on mount. Refactor case-by-case before re-enabling.
       "react-hooks/set-state-in-effect": "warn",
+      // Unescaped ' and " in JSX copy (landing page testimonials etc.) are
+      // harmless and render fine. Keep as a nudge, not a build failure.
+      "react/no-unescaped-entities": "warn",
     },
   },
 ]);
