@@ -129,6 +129,9 @@
     background: var(--theme-surface-base);
     color: var(--theme-text-primary);
     font-family: var(--theme-font-body);
+    /* Body at a medium 450 across the whole product (app, dashboard, site) for
+       legible authority without going bold. Headings stay 600 (rule below). */
+    font-weight: 450;
     -webkit-font-smoothing: antialiased;
   }
   h1, h2, h3, h4, h5, h6, .font-serif {
@@ -274,8 +277,6 @@
   --theme-font-heading: var(--font-playfair), Georgia, serif;
   background: var(--theme-surface-base);
   color: var(--theme-text-primary);
-  /* Inter body at a medium 450 for legible authority without going bold. */
-  font-weight: 450;
 }
 
 /* Editorial serif — Playfair Display, marketing headings. */
