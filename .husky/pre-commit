@@ -1,0 +1,22 @@
+#!/usr/bin/env sh
+# Pre-commit checks. Fast (~10-30s); blocks commit on failure.
+
+set -e
+
+# Git Bash on Windows starts hooks with a sanitized PATH. Add common Node
+# install locations so npm/npx resolve. Override per-developer if needed by
+# creating ~/.config/husky/init.sh and exporting your own PATH.
+case "$(uname -s)" in
+  MINGW*|MSYS*|CYGWIN*)
+    export PATH="/c/Program Files/nodejs:$PATH"
+    ;;
+esac
+
+# 1. Lint changed files only (catches new violations without forcing legacy cleanup).
+npx lint-staged
+
+# 2. Project-wide TypeScript typecheck.
+npm run typecheck
+
+# 3. Unit tests (vitest run is non-watch; exits 0 on pass).
+npm test

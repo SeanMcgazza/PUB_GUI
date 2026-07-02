@@ -1,0 +1,249 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/* ============================================================================
+   BarTab Design Tokens — the "DNA"
+   These are the white-label-overridable CSS variables. Per-pub themes can
+   override any of these via inline style="--theme-primary: #..." on a wrapper.
+   Code MUST always reference var(--theme-...) instead of hard-coding values.
+   ============================================================================ */
+:root {
+  /* Brand */
+  --theme-primary: #D97706;          /* Copper Gold — CTAs, active states */
+  --theme-primary-glow: #F59E0B;     /* Lighter copper for hover/glow */
+  --theme-primary-deep: #B45309;     /* Darker copper for pressed states */
+
+  /* Surfaces */
+  --theme-surface-base: #0F1115;     /* Rich Charcoal — main bg */
+  --theme-surface-card: #1C1F26;     /* Glass Gray — menu items, cards */
+  --theme-surface-card-hover: #252934;
+  --theme-surface-elevated: #2A2F3A;
+
+  /* Status accents */
+  --theme-success: #10B981;          /* Emerald — Ready */
+  --theme-info: #3B82F6;             /* Blue — Accepted */
+  --theme-warn: #F59E0B;             /* Amber — Preparing */
+  --theme-danger: #EF4444;           /* Ruby — Cancelled / Error */
+
+  /* Text */
+  --theme-text-primary: #F5F5F5;     /* High-contrast white-ish */
+  --theme-text-muted: #A8B0BC;       /* Secondary text */
+  --theme-text-subtle: #6B7280;      /* Tertiary */
+
+  /* Glass / borders */
+  --theme-border-glass: rgba(255, 255, 255, 0.08);
+  --theme-border-strong: rgba(255, 255, 255, 0.16);
+
+  /* Shape */
+  --theme-radius: 1rem;              /* 16px uniform */
+  --theme-radius-sm: 0.625rem;       /* 10px for chips */
+  --theme-radius-lg: 1.5rem;         /* 24px for sheets */
+  --theme-blur: 12px;
+
+  /* Typography */
+  --theme-font-heading: var(--font-lora), Georgia, serif;
+  --theme-font-body: var(--font-inter), system-ui, sans-serif;
+}
+
+/* Light-theme override for the bar staff app shell. The bar dashboard now uses
+   the dark "command center" look by default, but legacy admin surfaces can
+   opt back into a light surface via the .light class. */
+.light {
+  --theme-surface-base: #FFFFFF;
+  --theme-surface-card: #FAFAFA;
+  --theme-surface-card-hover: #F5F5F5;
+  --theme-surface-elevated: #FFFFFF;
+  --theme-text-primary: #0F1115;
+  --theme-text-muted: #4B5563;
+  --theme-text-subtle: #9CA3AF;
+  --theme-border-glass: rgba(15, 17, 21, 0.08);
+  --theme-border-strong: rgba(15, 17, 21, 0.16);
+}
+
+/* ============================================================================
+   Tailwind v4 @theme bridge — exposes the design tokens as Tailwind utilities.
+   ============================================================================ */
+@theme inline {
+  --color-background: var(--theme-surface-base);
+  --color-foreground: var(--theme-text-primary);
+  --color-card: var(--theme-surface-card);
+  --color-card-foreground: var(--theme-text-primary);
+  --color-popover: var(--theme-surface-card);
+  --color-popover-foreground: var(--theme-text-primary);
+  --color-primary: var(--theme-primary);
+  --color-primary-foreground: #FFFFFF;
+  --color-secondary: var(--theme-surface-elevated);
+  --color-secondary-foreground: var(--theme-text-primary);
+  --color-muted: var(--theme-surface-card);
+  --color-muted-foreground: var(--theme-text-muted);
+  --color-accent: var(--theme-surface-card-hover);
+  --color-accent-foreground: var(--theme-text-primary);
+  --color-destructive: var(--theme-danger);
+  --color-border: var(--theme-border-glass);
+  --color-input: var(--theme-border-strong);
+  --color-ring: var(--theme-primary);
+
+  /* Bartab-specific aliases (kept for backwards compat with existing classes) */
+  --color-pub-black: var(--theme-surface-base);
+  --color-pub-dark: var(--theme-surface-card);
+  --color-pub-card: var(--theme-surface-card);
+  --color-pub-card-hover: var(--theme-surface-card-hover);
+  --color-amber: var(--theme-primary);
+  --color-amber-light: var(--theme-primary-glow);
+  --color-amber-dark: var(--theme-primary-deep);
+  --color-amber-glow: var(--theme-primary-glow);
+  --color-cream: var(--theme-text-primary);
+  --color-cream-light: #FFFBEB;
+  --color-warm-brown: var(--theme-primary-deep);
+  --color-sage: var(--theme-success);
+  --color-dusty-rose: var(--theme-danger);
+
+  --color-sidebar: var(--theme-surface-card);
+  --color-sidebar-foreground: var(--theme-text-primary);
+  --color-sidebar-primary: var(--theme-primary);
+  --color-sidebar-primary-foreground: #FFFFFF;
+  --color-sidebar-accent: var(--theme-surface-card-hover);
+  --color-sidebar-accent-foreground: var(--theme-text-primary);
+  --color-sidebar-border: var(--theme-border-glass);
+  --color-sidebar-ring: var(--theme-primary);
+
+  --radius: var(--theme-radius);
+  --radius-sm: calc(var(--theme-radius) - 6px);
+  --radius-md: calc(var(--theme-radius) - 4px);
+  --radius-lg: var(--theme-radius);
+  --radius-xl: calc(var(--theme-radius) + 4px);
+  --radius-2xl: calc(var(--theme-radius) + 8px);
+  --radius-3xl: calc(var(--theme-radius) + 12px);
+
+  --font-sans: var(--theme-font-body);
+  --font-serif: var(--theme-font-heading);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html, body {
+    background: var(--theme-surface-base);
+    color: var(--theme-text-primary);
+    font-family: var(--theme-font-body);
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, h4, h5, h6, .font-serif {
+    font-family: var(--theme-font-heading);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+}
+
+/* ============================================================================
+   Utilities
+   ============================================================================ */
+@layer utilities {
+  .text-balance { text-wrap: balance; }
+
+  /* Glass surfaces — used on headers, modals, the category dock */
+  .glass {
+    background: color-mix(in oklab, var(--theme-surface-card) 70%, transparent);
+    backdrop-filter: blur(var(--theme-blur)) saturate(140%);
+    -webkit-backdrop-filter: blur(var(--theme-blur)) saturate(140%);
+    border: 1px solid var(--theme-border-glass);
+  }
+  .glass-strong {
+    background: color-mix(in oklab, var(--theme-surface-card) 88%, transparent);
+    backdrop-filter: blur(20px) saturate(160%);
+    -webkit-backdrop-filter: blur(20px) saturate(160%);
+    border: 1px solid var(--theme-border-glass);
+  }
+
+  /* Subtle glass edge for cards */
+  .border-glass {
+    border: 1px solid var(--theme-border-glass);
+  }
+  .border-glass-strong {
+    border: 1px solid var(--theme-border-strong);
+  }
+
+  /* Glow effects driven by --theme-primary for white-label support */
+  .glow-primary {
+    box-shadow:
+      0 0 24px color-mix(in oklab, var(--theme-primary) 35%, transparent),
+      0 0 48px color-mix(in oklab, var(--theme-primary) 10%, transparent);
+  }
+  .glow-primary-sm {
+    box-shadow:
+      0 0 12px color-mix(in oklab, var(--theme-primary) 25%, transparent);
+  }
+
+  /* Card shadows for dark theme */
+  .shadow-pub {
+    box-shadow:
+      0 4px 24px rgba(0, 0, 0, 0.45),
+      0 0 1px var(--theme-border-glass);
+  }
+  .shadow-pub-lg {
+    box-shadow:
+      0 12px 36px rgba(0, 0, 0, 0.55),
+      0 0 1px var(--theme-border-strong);
+  }
+
+  /* Gradient backgrounds */
+  .bg-pub-gradient {
+    background: linear-gradient(180deg, var(--theme-surface-base) 0%, var(--theme-surface-card) 100%);
+  }
+  .bg-primary-gradient {
+    background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-primary-deep) 100%);
+  }
+
+  .text-gradient-primary {
+    background: linear-gradient(135deg, var(--theme-primary-glow) 0%, var(--theme-primary) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Atmospheric pub backdrop — used as the customer-page hero placeholder
+     until pubs upload their own image. */
+  .bg-atmosphere {
+    background:
+      radial-gradient(ellipse at 30% 20%, color-mix(in oklab, var(--theme-primary) 24%, transparent) 0%, transparent 55%),
+      radial-gradient(ellipse at 70% 80%, color-mix(in oklab, #5b1e00 35%, transparent) 0%, transparent 60%),
+      linear-gradient(160deg, #181b22 0%, #0F1115 100%);
+  }
+
+  /* Pill button */
+  .btn-pill { @apply rounded-full px-6 py-2.5; }
+
+  /* Scrollbar styling for dark theme */
+  .scrollbar-dark::-webkit-scrollbar { width: 6px; }
+  .scrollbar-dark::-webkit-scrollbar-track { background: var(--theme-surface-card); }
+  .scrollbar-dark::-webkit-scrollbar-thumb { background: var(--theme-border-strong); border-radius: 3px; }
+  .scrollbar-dark::-webkit-scrollbar-thumb:hover { background: var(--theme-text-subtle); }
+
+  /* Hide scrollbar */
+  .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+}
+
+/* ============================================================================
+   Animations
+   ============================================================================ */
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 20px color-mix(in oklab, var(--theme-primary) 30%, transparent); }
+  50%      { box-shadow: 0 0 32px color-mix(in oklab, var(--theme-primary) 50%, transparent); }
+}
+.animate-pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
+
+/* Urgency border pulse for stale orders on the bar dashboard */
+@keyframes urgency-amber {
+  0%, 100% { border-color: color-mix(in oklab, var(--theme-warn) 35%, transparent); }
+  50%      { border-color: color-mix(in oklab, var(--theme-warn) 90%, transparent); }
+}
+@keyframes urgency-red {
+  0%, 100% { border-color: color-mix(in oklab, var(--theme-danger) 50%, transparent); }
+  50%      { border-color: color-mix(in oklab, var(--theme-danger) 100%, transparent); }
+}
+.urgency-warn { animation: urgency-amber 1.6s ease-in-out infinite; }
+.urgency-danger { animation: urgency-red 1.2s ease-in-out infinite; }
