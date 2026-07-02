@@ -266,7 +266,7 @@
   --theme-primary: #2D3A4B;        /* deep slate — primary actions/headers */
   --theme-primary-glow: #3B4A5E;
   --theme-primary-deep: #1F2A38;
-  --theme-border-glass: #E5E7EB;   /* feather-light hairline */
+  --theme-border-glass: #D1D5DB;   /* crisp hairline (still thin) */
   --theme-border-strong: #D8DCDF;
   --theme-radius: 0.75rem;
   --theme-radius-sm: 0.5rem;
@@ -274,10 +274,11 @@
   --theme-font-heading: var(--font-playfair), Georgia, serif;
   background: var(--theme-surface-base);
   color: var(--theme-text-primary);
+  /* Inter body at a medium 450 for legible authority without going bold. */
+  font-weight: 450;
 }
 
 /* Editorial serif — Playfair Display, marketing headings. */
 .font-display {
   font-family: var(--font-playfair), Georgia, serif;
-  font-weight: 400;
 }

@@ -75,7 +75,7 @@ export default function SignupPage() {
           <div className="w-20 h-20 bg-[color:var(--theme-success)]/15 rounded-full flex items-center justify-center mx-auto mb-6">
             <Check className="w-10 h-10 text-[color:var(--theme-success)]" />
           </div>
-          <h1 className="font-display text-3xl text-[#2D3A4B] mb-2">Check your email</h1>
+          <h1 className="font-display font-semibold text-3xl text-[#2D3A4B] mb-2">Check your email</h1>
           <p className="text-muted-foreground mb-6">
             We&apos;ve sent a confirmation link to <strong>{email}</strong>. 
             Click it to activate your account.
@@ -100,7 +100,7 @@ export default function SignupPage() {
               <Beer className="w-7 h-7 text-white" />
             </div>
           </Link>
-          <h1 className="font-display text-3xl text-[#2D3A4B] mt-4">Create your pub</h1>
+          <h1 className="font-display font-semibold text-3xl text-[#2D3A4B] mt-4">Create your pub</h1>
           <p className="text-muted-foreground mt-1">Start taking orders in minutes</p>
         </div>
 

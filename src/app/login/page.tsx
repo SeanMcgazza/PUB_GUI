@@ -57,7 +57,7 @@ export default function LoginPage() {
               <Beer className="w-7 h-7 text-white" />
             </div>
           </Link>
-          <h1 className="font-display text-3xl text-[#2D3A4B] mt-4">Welcome back</h1>
+          <h1 className="font-display font-semibold text-3xl text-[#2D3A4B] mt-4">Welcome back</h1>
           <p className="text-muted-foreground mt-1">Sign in to manage your pub</p>
         </div>
 

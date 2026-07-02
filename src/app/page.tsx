@@ -51,7 +51,7 @@ const TESTIMONIALS = [
 function Seal({ label = 'Verified' }: { label?: string }) {
   return (
     <span className="inline-flex items-center gap-2 text-[13px] text-[#5D7A7D]">
-      <span className="flex items-center justify-center w-5 h-5 rounded-full bg-[#5D7A7D]/12">
+      <span className="flex items-center justify-center w-5 h-5 rounded-full bg-[#5D7A7D]/15 ring-1 ring-[#5D7A7D]/30">
         <Check className="w-3 h-3" strokeWidth={1.5} />
       </span>
       {label}
@@ -63,7 +63,7 @@ export default function HomePage() {
   return (
     <div className="site-theme min-h-screen bg-[#F9F7F5] text-[#1A1D1E] antialiased">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-[#F9F7F5]/85 backdrop-blur border-b border-[#E5E7EB]">
+      <header className="sticky top-0 z-50 bg-[#F9F7F5]/85 backdrop-blur border-b border-[#D1D5DB]">
         <div className="max-w-5xl mx-auto px-6 h-16 flex items-center justify-between">
           <Link href="/" className="font-display text-xl text-[#2D3A4B]">
             BarTab
@@ -88,10 +88,10 @@ export default function HomePage() {
           <p className="text-xs uppercase tracking-[0.16em] text-[#5D7A7D] mb-5">
             Table ordering for pubs
           </p>
-          <h1 className="font-display text-4xl md:text-5xl leading-[1.2] text-[#2D3A4B] mb-5">
+          <h1 className="font-display font-semibold tracking-tight text-4xl md:text-5xl leading-[1.15] text-[#2D3A4B] mb-5">
             A calmer way to serve every table
           </h1>
-          <p className="text-lg leading-[1.65] text-[#4A4F52] max-w-xl mx-auto mb-9">
+          <p className="text-lg leading-[1.65] text-[#11181C] max-w-xl mx-auto mb-9">
             Guests scan the code at their table, browse your menu at their own pace, and order
             without waiting. You keep pouring.
           </p>
@@ -104,7 +104,7 @@ export default function HomePage() {
             </Link>
             <Link
               href="/login"
-              className="border border-[#C9CFD2] text-[#2D3A4B] font-medium px-6 py-3 rounded-lg hover:bg-white transition-colors"
+              className="border border-[#2D3A4B] text-[#2D3A4B] font-medium px-6 py-3 rounded-lg hover:bg-[#2D3A4B]/[0.05] transition-colors"
             >
               Sign in
             </Link>
@@ -114,7 +114,7 @@ export default function HomePage() {
 
       {/* Trust line */}
       <div className="flex items-center justify-center gap-3 px-6 pb-16">
-        <span className="flex items-center justify-center w-6 h-6 rounded-full bg-[#5D7A7D]/12 text-[#5D7A7D]">
+        <span className="flex items-center justify-center w-6 h-6 rounded-full bg-[#5D7A7D]/15 ring-1 ring-[#5D7A7D]/30 text-[#5D7A7D]">
           <Check className="w-3.5 h-3.5" strokeWidth={1.5} />
         </span>
         <span className="text-sm tracking-[0.06em] text-[#5D7A7D]">
@@ -128,11 +128,11 @@ export default function HomePage() {
           {STEPS.map((step) => (
             <div
               key={step.title}
-              className="bg-white border border-[#E5E7EB] rounded-xl shadow-sm p-7"
+              className="bg-white border border-[#D1D5DB] rounded-xl shadow-sm p-7"
             >
               <step.icon className="w-6 h-6 text-[#2D3A4B]" strokeWidth={1.5} />
-              <h3 className="font-display text-lg text-[#2D3A4B] mt-4 mb-2">{step.title}</h3>
-              <p className="text-sm leading-[1.7] text-[#5B6063]">{step.body}</p>
+              <h3 className="font-display font-medium text-lg text-[#2D3A4B] mt-4 mb-2">{step.title}</h3>
+              <p className="text-sm leading-[1.7] text-[#2E353A]">{step.body}</p>
             </div>
           ))}
         </div>
@@ -141,17 +141,17 @@ export default function HomePage() {
       {/* Testimonials — calm cards with a quality seal */}
       <section className="px-6 pb-20">
         <div className="max-w-5xl mx-auto">
-          <h2 className="font-display text-2xl text-[#2D3A4B] text-center mb-10">
+          <h2 className="font-display font-medium text-2xl text-[#2D3A4B] text-center mb-10">
             Trusted by pubs across Ireland
           </h2>
           <div className="grid md:grid-cols-3 gap-5">
             {TESTIMONIALS.map((t) => (
               <div
                 key={t.name}
-                className="bg-white border border-[#E5E7EB] rounded-xl shadow-sm p-6 flex flex-col"
+                className="bg-white border border-[#D1D5DB] rounded-xl shadow-sm p-6 flex flex-col"
               >
                 <Seal />
-                <p className="text-[15px] leading-[1.7] text-[#3A3F42] mt-4 mb-5 flex-1">
+                <p className="text-[15px] leading-[1.7] text-[#2E353A] mt-4 mb-5 flex-1">
                   &ldquo;{t.quote}&rdquo;
                 </p>
                 <div className="flex items-center gap-3">
@@ -159,7 +159,7 @@ export default function HomePage() {
                     {t.initials}
                   </div>
                   <div>
-                    <p className="font-display text-[#2D3A4B] leading-tight">{t.name}</p>
+                    <p className="font-display font-medium text-[#2D3A4B] leading-tight">{t.name}</p>
                     <p className="text-[13px] text-[#A8B5B1]">{t.place}</p>
                   </div>
                 </div>
@@ -171,9 +171,9 @@ export default function HomePage() {
 
       {/* Closing */}
       <section className="px-6 pb-24">
-        <div className="max-w-2xl mx-auto text-center bg-white border border-[#E5E7EB] rounded-2xl shadow-sm px-8 py-14">
-          <h2 className="font-display text-2xl text-[#2D3A4B] mb-4">Ready when you are</h2>
-          <p className="text-[15px] leading-[1.65] text-[#5B6063] max-w-md mx-auto mb-7">
+        <div className="max-w-2xl mx-auto text-center bg-white border border-[#D1D5DB] rounded-2xl shadow-sm px-8 py-14">
+          <h2 className="font-display font-medium text-2xl text-[#2D3A4B] mb-4">Ready when you are</h2>
+          <p className="text-[15px] leading-[1.65] text-[#11181C] max-w-md mx-auto mb-7">
             A quiet, considered way to take orders. No app for your guests to download, and nothing
             new for your staff to learn.
           </p>
@@ -188,7 +188,7 @@ export default function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-[#E5E7EB] px-6 py-8">
+      <footer className="border-t border-[#D1D5DB] px-6 py-8">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <span className="font-display text-[#2D3A4B]">BarTab</span>
           <p className="text-[13px] text-[#A8B5B1]">

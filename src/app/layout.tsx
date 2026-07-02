@@ -23,7 +23,7 @@ const lora = Lora({
 const playfair = Playfair_Display({
   variable: '--font-playfair',
   subsets: ['latin'],
-  weight: ['400', '500'],
+  weight: ['400', '500', '600'],
   display: 'swap',
 });
 
