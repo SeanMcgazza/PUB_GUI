@@ -48,16 +48,16 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-atmosphere flex items-center justify-center p-4">
+    <div className="site-theme min-h-screen bg-[#F9F7F5] flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
           <Link href="/" className="inline-flex items-center gap-2">
-            <div className="p-3 bg-amber-600 rounded-2xl">
+            <div className="p-3 bg-[#2D3A4B] rounded-2xl">
               <Beer className="w-7 h-7 text-white" />
             </div>
           </Link>
-          <h1 className="text-2xl font-bold text-foreground mt-4">Welcome back</h1>
+          <h1 className="font-display text-3xl text-[#2D3A4B] mt-4">Welcome back</h1>
           <p className="text-muted-foreground mt-1">Sign in to manage your pub</p>
         </div>
 
@@ -105,7 +105,7 @@ export default function LoginPage() {
               <Button
                 type="submit"
                 disabled={!isValid || loading}
-                className="w-full bg-amber-600 hover:bg-amber-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-[#2D3A4B] hover:bg-[#1F2A38] text-white disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <>
@@ -125,7 +125,7 @@ export default function LoginPage() {
 
         <p className="text-center text-sm text-muted-foreground mt-6">
           Don&apos;t have an account?{' '}
-          <Link href="/signup" className="text-amber-600 hover:text-amber-700 font-medium">
+          <Link href="/signup" className="text-[#5D7A7D] hover:text-[#4A6265] font-medium">
             Sign up free
           </Link>
         </p>
