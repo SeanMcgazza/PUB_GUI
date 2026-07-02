@@ -38,6 +38,13 @@ honest at the database level (not just the UI).
 - [x] Customer "waiting for staff" gate; approval happens before payment
 - [x] Staff Approve/Reject panel on the dashboard (realtime + poll)
 
+### Age verification (no personal data)
+- [x] Per-item `age_restricted` (18+) flag in the menu editor
+- [x] Required 18+ acknowledgment at checkout when the cart has an alcohol item
+- [x] Server-enforced acknowledgment (tampered client can't skip it)
+- [x] Bar dashboard '🔞 Check ID' badge + verify/refuse at handoff
+- [x] Stores only outcome + timestamp on the order — no DOB, ID scan, or identity
+
 ### Security & hardening
 - [x] RLS lockdown — no public read/write on orders/pubs/tables
 - [x] `SECURITY DEFINER` RPCs with no token enumeration

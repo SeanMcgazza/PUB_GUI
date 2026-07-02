@@ -71,6 +71,7 @@ CREATE TABLE public.menu_items (
   price numeric(10,2) NOT NULL,
   image_url text,
   is_available boolean DEFAULT true,
+  age_restricted boolean NOT NULL DEFAULT false, -- 18+ item; staff ID-check at handoff
   created_at timestamptz DEFAULT now()
 );
 
@@ -87,6 +88,12 @@ CREATE TABLE public.orders (
   -- Optional reason the bar provides when cancelling. Shown on the customer's
   -- cancelled-order screen. Per Q2.2.
   cancel_reason text,
+  -- Age verification (0003): status of the staff ID check at handoff. No
+  -- personal data — just the outcome + when. 'not_required' unless the order
+  -- contains an age_restricted item.
+  id_check_status text NOT NULL DEFAULT 'not_required'
+    CHECK (id_check_status IN ('not_required', 'pending', 'verified', 'refused')),
+  id_checked_at timestamptz,
   created_at timestamptz DEFAULT now(),
   updated_at timestamptz DEFAULT now()
 );
@@ -217,7 +224,8 @@ BEGIN
       SELECT jsonb_agg(jsonb_build_object('id', m.id, 'pub_id', m.pub_id,
                                           'category_id', m.category_id, 'name', m.name,
                                           'description', m.description, 'price', m.price,
-                                          'image_url', m.image_url, 'is_available', m.is_available)
+                                          'image_url', m.image_url, 'is_available', m.is_available,
+                                          'age_restricted', m.age_restricted)
                        ORDER BY m.name)
         FROM public.menu_items m
        WHERE m.pub_id = v_pub.id AND m.is_available = true), '[]'::jsonb)

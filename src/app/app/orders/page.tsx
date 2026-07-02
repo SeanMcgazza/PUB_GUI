@@ -81,6 +81,30 @@ export default function OrdersPage() {
     return unsub;
   }, [pub, fetchOrders]);
 
+  // Record the staff ID check made at the table. Stores only the outcome +
+  // timestamp on the order — no personal data. Optimistic local update, then
+  // persist (owner RLS allows updating own pub's orders).
+  const markIdCheck = async (
+    order: OrderWithDetails,
+    status: 'verified' | 'refused'
+  ) => {
+    const decidedAt = new Date().toISOString();
+    setOrders((prev) =>
+      prev.map((o) =>
+        o.id === order.id
+          ? { ...o, id_check_status: status, id_checked_at: decidedAt }
+          : o
+      )
+    );
+    if (isDemoMode()) return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const supabase = createClient() as any;
+    await supabase
+      .from('orders')
+      .update({ id_check_status: status, id_checked_at: decidedAt })
+      .eq('id', order.id);
+  };
+
   const filteredOrders = orders.filter((order) => {
     if (!searchQuery) return true;
     const search = searchQuery.toLowerCase();
@@ -262,6 +286,11 @@ export default function OrdersPage() {
                         >
                           {order.status}
                         </span>
+                        {order.id_check_status === 'pending' && (
+                          <span className="ml-1 inline-block px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
+                            🔞 Check ID
+                          </span>
+                        )}
                       </td>
                       <td className="px-4 py-3 text-sm text-muted-foreground">
                         {format(new Date(order.created_at), 'MMM d, HH:mm')}
@@ -296,6 +325,39 @@ export default function OrdersPage() {
                                 </span>
                               </div>
                             ))}
+                            {order.id_check_status !== 'not_required' && (
+                              <div className="mt-2 pt-2 border-t">
+                                <p className="text-sm font-medium text-amber-700">
+                                  🔞 Age-restricted order — check ID at the table
+                                </p>
+                                {order.id_check_status === 'pending' ? (
+                                  <div className="flex gap-2 mt-2">
+                                    <Button
+                                      size="sm"
+                                      onClick={() => markIdCheck(order, 'verified')}
+                                      className="bg-green-600 hover:bg-green-700 text-white"
+                                    >
+                                      ID checked — 18+
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => markIdCheck(order, 'refused')}
+                                    >
+                                      Couldn&apos;t verify
+                                    </Button>
+                                  </div>
+                                ) : (
+                                  <p className="text-sm text-muted-foreground mt-1">
+                                    {order.id_check_status === 'verified'
+                                      ? 'ID verified'
+                                      : 'ID refused'}
+                                    {order.id_checked_at &&
+                                      ` · ${format(new Date(order.id_checked_at), 'HH:mm')}`}
+                                  </p>
+                                )}
+                              </div>
+                            )}
                             {order.notes && (
                               <div className="mt-2 pt-2 border-t">
                                 <p className="text-sm">

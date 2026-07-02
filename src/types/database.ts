@@ -118,6 +118,7 @@ export interface Database {
           price: number;
           image_url: string | null;
           is_available: boolean;
+          age_restricted: boolean;
           created_at: string;
         };
         Insert: {
@@ -129,6 +130,7 @@ export interface Database {
           price: number;
           image_url?: string | null;
           is_available?: boolean;
+          age_restricted?: boolean;
           created_at?: string;
         };
         Update: {
@@ -140,6 +142,7 @@ export interface Database {
           price?: number;
           image_url?: string | null;
           is_available?: boolean;
+          age_restricted?: boolean;
           created_at?: string;
         };
       };
@@ -154,6 +157,8 @@ export interface Database {
           total: number;
           notes: string | null;
           cancel_reason: string | null;
+          id_check_status: 'not_required' | 'pending' | 'verified' | 'refused';
+          id_checked_at: string | null;
           payment_intent_id: string | null;
           payment_status: 'unpaid' | 'pending' | 'paid' | 'refunded' | 'failed';
           paid_at: string | null;
@@ -170,6 +175,8 @@ export interface Database {
           total?: number;
           notes?: string | null;
           cancel_reason?: string | null;
+          id_check_status?: 'not_required' | 'pending' | 'verified' | 'refused';
+          id_checked_at?: string | null;
           payment_intent_id?: string | null;
           payment_status?: 'unpaid' | 'pending' | 'paid' | 'refunded' | 'failed';
           paid_at?: string | null;
@@ -186,6 +193,8 @@ export interface Database {
           total?: number;
           notes?: string | null;
           cancel_reason?: string | null;
+          id_check_status?: 'not_required' | 'pending' | 'verified' | 'refused';
+          id_checked_at?: string | null;
           payment_intent_id?: string | null;
           payment_status?: 'unpaid' | 'pending' | 'paid' | 'refunded' | 'failed';
           paid_at?: string | null;
