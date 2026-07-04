@@ -4,7 +4,14 @@ import { createClient } from '@/lib/supabase/server';
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get('code');
-  const next = searchParams.get('next') ?? '/app';
+  // Only allow same-site relative paths for ?next= — anything else (absolute
+  // URLs, protocol-relative //host, backslash tricks, userinfo @) could turn
+  // this into an open redirect after login.
+  const rawNext = searchParams.get('next') ?? '/app';
+  const next =
+    rawNext.startsWith('/') && !rawNext.startsWith('//') && !rawNext.includes('\\')
+      ? rawNext
+      : '/app';
 
   if (code) {
     const supabase = await createClient();
