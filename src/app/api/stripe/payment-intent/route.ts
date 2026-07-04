@@ -58,6 +58,22 @@ export async function POST(request: NextRequest) {
   }
 }
 
+/**
+ * Stripe metadata values are limited to 500 characters. Split a long string
+ * across `key_0`, `key_1`, ... plus `key_chunks` so the webhook can rebuild it.
+ */
+function chunkMetadata(key: string, value: string): Record<string, string> {
+  const CHUNK = 450;
+  if (value.length <= CHUNK) return { [key]: value };
+  const out: Record<string, string> = {};
+  let n = 0;
+  for (let i = 0; i < value.length; i += CHUNK) {
+    out[`${key}_${n++}`] = value.slice(i, i + CHUNK);
+  }
+  out[`${key}_chunks`] = String(n);
+  return out;
+}
+
 async function handle(request: NextRequest) {
   if (!isStripeConfigured()) {
     return NextResponse.json(
@@ -80,7 +96,8 @@ async function handle(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
-  const { pubSlug, tableToken, sessionToken, items, notes, ageAcknowledged } = body;
+  const { pubSlug, tableToken, sessionToken, items, ageAcknowledged } = body;
+  const notes = typeof body.notes === 'string' ? body.notes.slice(0, 480) : undefined;
   if (!pubSlug || !tableToken || !sessionToken || !items?.length) {
     return NextResponse.json(
       { error: 'Missing pubSlug, tableToken, sessionToken, or items' },
@@ -207,7 +224,14 @@ async function handle(request: NextRequest) {
         { status: 400 }
       );
     }
-    const qty = Math.max(1, Math.min(99, Math.floor(requested.quantity)));
+    const rawQty = Number(requested.quantity);
+    if (!Number.isFinite(rawQty) || rawQty < 1) {
+      return NextResponse.json(
+        { error: `Invalid quantity for ${m.name}` },
+        { status: 400 }
+      );
+    }
+    const qty = Math.max(1, Math.min(99, Math.floor(rawQty)));
     validated.push({
       menuItemId: m.id,
       name: m.name,
@@ -286,9 +310,11 @@ async function handle(request: NextRequest) {
         tableId: table.id,
         sessionToken,
         confirmationCode,
-        notes: notes || '',
-        // Items as JSON because metadata values are strings only.
-        items: JSON.stringify(validated),
+        notes: (notes || '').slice(0, 480),
+        // Items as JSON because metadata values are strings only. Stripe caps
+        // each metadata VALUE at 500 chars, which a ~5-item cart exceeds — so
+        // split the JSON across numbered keys (50 keys x 500 chars available).
+        ...chunkMetadata('items', JSON.stringify(validated)),
       },
       description: `${pub.name} — Table ${table.number} — Order #${confirmationCode}`,
     });

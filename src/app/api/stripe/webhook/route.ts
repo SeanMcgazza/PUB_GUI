@@ -119,7 +119,15 @@ async function handlePaymentIntentSucceeded(pi: Stripe.PaymentIntent) {
   const sessionToken = meta.sessionToken;
   const confirmationCode = meta.confirmationCode;
   const notes = meta.notes || null;
-  const itemsJson = meta.items;
+  // Items may arrive whole (`items`) or chunked across `items_0..n` when the
+  // JSON exceeded Stripe's 500-char metadata value limit (see payment-intent).
+  let itemsJson = meta.items;
+  if (!itemsJson && meta.items_chunks) {
+    const n = parseInt(meta.items_chunks, 10);
+    if (Number.isFinite(n) && n > 0 && n <= 50) {
+      itemsJson = Array.from({ length: n }, (_, i) => meta[`items_${i}`] ?? '').join('');
+    }
+  }
 
   if (!pubId || !sessionToken || !confirmationCode || !itemsJson) {
     console.error('payment_intent.succeeded missing required metadata', meta);
