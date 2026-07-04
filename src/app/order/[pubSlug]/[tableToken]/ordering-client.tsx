@@ -178,7 +178,7 @@ export function OrderingClient({
   // Persist a session cookie so the customer can be matched to their order
   // on the bar's side. 2-hour TTL.
   useEffect(() => {
-    document.cookie = `bartab_session=${sessionToken}; path=/; max-age=${2 * 60 * 60}; SameSite=Lax`;
+    document.cookie = `bartab_session=${sessionToken}; path=/; max-age=${3 * 60 * 60}; SameSite=Lax`;
   }, [sessionToken]);
 
   // Production presence (audit C4): tell the server we scanned THIS table's QR
@@ -530,7 +530,7 @@ export function OrderingClient({
       case 'cancelled':
         return {
           icon: X,
-          label: 'Order cancelled',
+          label: 'Order cancelled — your payment has been refunded',
           color: 'text-red-300',
           bg: 'bg-red-400/10',
         };

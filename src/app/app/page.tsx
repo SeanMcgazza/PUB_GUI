@@ -274,6 +274,27 @@ export default function DashboardPage() {
       return;
     }
 
+    // Cancellations go through the server so a paid order is ALWAYS refunded
+    // before it's cancelled (prepaid-first must never keep a customer's money).
+    if (newStatus === 'cancelled') {
+      try {
+        const res = await fetch('/api/orders/cancel', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orderId, reason: cancelReason || null }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          console.error('Cancel/refund failed:', data.error);
+          alert(data.error || 'Cancel failed — the order was NOT cancelled.');
+        }
+      } catch (err) {
+        console.error('Cancel/refund request failed:', err);
+        alert('Cancel failed — the order was NOT cancelled. Please retry.');
+      }
+      return;
+    }
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const supabase = createClient() as any;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -281,9 +302,6 @@ export default function DashboardPage() {
       status: newStatus,
       updated_at: new Date().toISOString(),
     };
-    if (newStatus === 'cancelled' && cancelReason !== undefined) {
-      update.cancel_reason = cancelReason || null;
-    }
 
     const { error } = await supabase.from('orders').update(update).eq('id', orderId);
 
