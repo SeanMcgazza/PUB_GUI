@@ -92,10 +92,13 @@ export async function POST(request: NextRequest) {
   }
 
   // Step 2: create the one-time onboarding link.
+  // Prefer the configured app URL, then the server-derived origin. The client
+  // Origin header is last resort only — it's attacker-controllable and ends up
+  // in Stripe's return/refresh URLs.
   const origin =
-    request.headers.get('origin') ||
-    request.nextUrl.origin ||
     process.env.NEXT_PUBLIC_APP_URL ||
+    request.nextUrl.origin ||
+    request.headers.get('origin') ||
     '';
 
   const link = await stripe.accountLinks.create({
