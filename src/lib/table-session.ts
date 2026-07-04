@@ -12,7 +12,7 @@ import crypto from 'crypto';
 //   "<pubId>.<tableId>.<expEpochSecs>.<base64url HMAC-SHA256>"
 
 export const CHECKIN_COOKIE = 'bartab_checkin';
-export const CHECKIN_TTL_SECONDS = 90 * 60; // 90 minutes
+export const CHECKIN_TTL_SECONDS = 3 * 60 * 60; // 3 hours — a full pub visit, so a second round doesn't demand a re-scan
 
 function getSecret(): string {
   const s = process.env.TABLE_SESSION_SECRET;

@@ -89,6 +89,7 @@ async function handle(request: NextRequest) {
     items?: { menuItemId: string; quantity: number }[];
     notes?: string;
     ageAcknowledged?: boolean;
+    receiptEmail?: string;
   };
   try {
     body = await request.json();
@@ -98,6 +99,13 @@ async function handle(request: NextRequest) {
 
   const { pubSlug, tableToken, sessionToken, items, ageAcknowledged } = body;
   const notes = typeof body.notes === 'string' ? body.notes.slice(0, 480) : undefined;
+  // Optional receipt email — validated, passed straight to Stripe, never stored.
+  const receiptEmail =
+    typeof body.receiptEmail === 'string' &&
+    body.receiptEmail.length <= 254 &&
+    /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(body.receiptEmail)
+      ? body.receiptEmail.trim()
+      : undefined;
   if (!pubSlug || !tableToken || !sessionToken || !items?.length) {
     return NextResponse.json(
       { error: 'Missing pubSlug, tableToken, sessionToken, or items' },
@@ -303,6 +311,7 @@ async function handle(request: NextRequest) {
         destination: pub.stripe_account_id,
       },
       application_fee_amount: PLATFORM_FEE_CENTS,
+      receipt_email: receiptEmail,
       metadata: {
         // Everything the webhook needs to construct the Order row.
         pubId: pub.id,

@@ -65,6 +65,10 @@ export function PaymentScreen({
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [paymentIntentId, setPaymentIntentId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // Optional — customers are anonymous, but many want a card receipt. Stripe
+  // sends it; BarTab stores nothing.
+  const [receiptEmail, setReceiptEmail] = useState('');
+  const [emailLocked, setEmailLocked] = useState(false);
 
   // Step 1: create the Payment Intent on the server.
   useEffect(() => {
@@ -84,6 +88,7 @@ export function PaymentScreen({
             })),
             notes: orderNotes,
             ageAcknowledged,
+            receiptEmail: emailLocked && receiptEmail ? receiptEmail : undefined,
           }),
         });
         const data = await res.json();
@@ -101,7 +106,50 @@ export function PaymentScreen({
     return () => {
       cancelled = true;
     };
-  }, [pub.slug, table.qr_token, sessionToken, cart, orderNotes, ageAcknowledged]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pub.slug, table.qr_token, sessionToken, cart, orderNotes, ageAcknowledged, emailLocked]);
+
+  // Pre-step: optional receipt email before we mint the Payment Intent.
+  if (!emailLocked) {
+    return (
+      <div className="p-4 sm:p-5 space-y-4">
+        <h2 className="font-serif text-xl text-[color:var(--theme-text-primary)]">
+          Almost there
+        </h2>
+        <label className="block">
+          <span className="text-sm text-[color:var(--theme-text-muted)]">
+            Email for your receipt <span className="opacity-70">(optional)</span>
+          </span>
+          <input
+            type="email"
+            inputMode="email"
+            autoComplete="email"
+            value={receiptEmail}
+            onChange={(e) => setReceiptEmail(e.target.value)}
+            placeholder="you@example.com"
+            className="mt-1.5 w-full rounded-xl bg-white/5 border border-white/10 px-4 py-3 text-[color:var(--theme-text-primary)] placeholder:text-white/25 focus:outline-none focus:ring-2 focus:ring-[color:var(--theme-primary-glow)]/60"
+          />
+          <span className="block mt-1.5 text-xs text-[color:var(--theme-text-muted)]">
+            Sent by Stripe. We don&apos;t store it or send you anything else.
+          </span>
+        </label>
+        <Button
+          onClick={() => setEmailLocked(true)}
+          disabled={receiptEmail !== '' && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(receiptEmail)}
+          className="w-full bg-primary-gradient hover:opacity-90 text-white py-6 text-lg font-semibold rounded-2xl glow-primary disabled:opacity-50"
+        >
+          Continue to payment
+        </Button>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="w-full text-sm text-[color:var(--theme-text-muted)] hover:text-[color:var(--theme-text-primary)] py-2"
+        >
+          Back to cart
+        </button>
+      </div>
+    );
+  }
 
   if (error) {
     return (
