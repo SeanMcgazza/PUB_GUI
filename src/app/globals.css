@@ -130,6 +130,26 @@
     color: var(--theme-text-primary);
     font-family: var(--theme-font-body);
     -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  /* Kill the grey tap flash on mobile and the 300ms double-tap-zoom delay —
+     the single biggest "feels like a real app" win for the QR flow. */
+  button, a, [role='button'], input, label, select, textarea {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+  /* Prices, confirmation codes and stats line up instead of jittering. */
+  body {
+    font-variant-numeric: tabular-nums;
+  }
+  ::selection {
+    background: color-mix(in oklab, var(--theme-primary) 30%, transparent);
+  }
+  /* Visible keyboard focus everywhere, invisible for mouse/touch. */
+  :focus-visible {
+    outline: 2px solid var(--theme-primary-glow);
+    outline-offset: 2px;
+    border-radius: 4px;
   }
   h1, h2, h3, h4, h5, h6, .font-serif {
     font-family: var(--theme-font-heading);
@@ -225,6 +245,24 @@
   /* Hide scrollbar */
   .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
   .scrollbar-hide::-webkit-scrollbar { display: none; }
+
+  /* iPhone home-indicator / notch safe areas — used by the customer app's
+     fixed bottom cart bar and sheet so controls never sit under the bar. */
+  .pb-safe { padding-bottom: max(0.75rem, env(safe-area-inset-bottom)); }
+  .pb-safe-lg { padding-bottom: max(1.25rem, env(safe-area-inset-bottom)); }
+  .pt-safe { padding-top: max(0.5rem, env(safe-area-inset-top)); }
+
+  /* Sheets shouldn't scroll-chain the page behind them. */
+  .overscroll-contain { overscroll-behavior: contain; }
+}
+
+/* Respect users who turn animations off — also stops the urgency pulses. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* ============================================================================

@@ -598,7 +598,7 @@ export function OrderingClient({
 
             <h2 className="font-serif text-3xl mb-2 text-[color:var(--theme-text-primary)]">
               Order{' '}
-              <span className="text-gradient-primary">
+              <span className="text-gradient-primary tracking-[0.08em]">
                 #{activeOrder.confirmation_code}
               </span>
             </h2>
@@ -910,7 +910,7 @@ export function OrderingClient({
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 28, stiffness: 320 }}
-              className="fixed bottom-0 left-0 right-0 glass-strong rounded-t-3xl z-50 max-h-[85vh] overflow-hidden flex flex-col"
+              className="fixed bottom-0 left-0 right-0 glass-strong rounded-t-3xl z-50 max-h-[85vh] overflow-hidden flex flex-col pb-safe overscroll-contain"
               style={themeStyle}
             >
               <div className="p-5 border-b border-glass flex items-center justify-between">
@@ -1229,7 +1229,7 @@ function CategoryDock({
   // category icons on narrow screens so the cart label can fit; on wider
   // screens we can show both. The active category chip stays put either way.
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-30 px-3 pb-3 pt-6 bg-gradient-to-t from-black/90 via-black/60 to-transparent pointer-events-none">
+    <div className="fixed bottom-0 left-0 right-0 z-30 px-3 pb-safe pt-6 bg-gradient-to-t from-black/90 via-black/60 to-transparent pointer-events-none">
       <div className="max-w-md mx-auto pointer-events-auto">
         <div className="glass-strong rounded-full p-1.5 flex items-center gap-1 shadow-pub-lg">
           {/* Category chips. Inactive ones collapse on small screens

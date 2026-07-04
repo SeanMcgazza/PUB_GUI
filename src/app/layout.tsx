@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Inter, Lora, Playfair_Display } from 'next/font/google';
 import './globals.css';
 
@@ -26,6 +26,15 @@ const playfair = Playfair_Display({
   weight: ['400', '500'],
   display: 'swap',
 });
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  // Lets the customer app draw behind the iPhone home indicator and use
+  // env(safe-area-inset-*) so fixed bottom bars never sit under it.
+  viewportFit: 'cover',
+  themeColor: '#0F1115',
+};
 
 export const metadata: Metadata = {
   title: 'BarTab - QR Code Ordering for Pubs',
